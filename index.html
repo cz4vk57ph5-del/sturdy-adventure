@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Galaxy Confluence 1.1.1</title>
+<style>
+:root{--bg:#0d1020;--card:#151a30;--card2:#10152a;--bd:#2a3150;--tx:#e8ecf8;--mu:#9aa3c0;--g:#35d29a;--r:#ff6b6b;--y:#f2c14e;--a:#5cc8ff;--sky:#070a18}
+@media (prefers-color-scheme: light){:root{--bg:#f2f4fa;--card:#fff;--card2:#eef1f9;--bd:#d3d9ea;--tx:#1a1d2b;--mu:#586080;--g:#087a3f;--r:#c62828;--y:#8a6700;--a:#00709a;--sky:#0b1030}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 system-ui,Segoe UI,sans-serif}
+main{max-width:1180px;margin:0 auto;padding:16px}h1{margin:.2em 0;font-size:1.5rem}h1 small{color:var(--mu);font-weight:400;font-size:.85rem}h2{font-size:1.05rem;margin:0 0 8px}h3{margin:0;font-size:1.1rem}h3 small{color:var(--mu);font-weight:400;font-size:.8rem}
+.panel,.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px;margin:12px 0}.card.dim{border-style:dashed}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media (max-width:860px){.grid{grid-template-columns:1fr}}
+.card header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+select,input,textarea{max-width:100%}.row>*{max-width:100%;min-width:0}label span{white-space:normal}canvas{width:100%;height:auto;border-radius:8px;display:block;margin:6px 0}
+textarea,input,select,button{font:inherit;color:var(--tx);background:var(--card2);border:1px solid var(--bd);border-radius:8px;padding:6px 9px}textarea{width:100%;font:12px/1.4 ui-monospace,Consolas,monospace}
+button{cursor:pointer}button:hover{border-color:var(--a)}label{color:var(--mu);font-size:.85rem}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:end;margin:8px 0}.row>*{flex:0 0 auto}.row label{display:flex;flex-direction:column;gap:3px}
+.chip{padding:2px 10px;border-radius:99px;font-size:.78rem;border:1px solid var(--bd)}.chip.g{color:var(--g);border-color:var(--g)}.chip.r{color:var(--r);border-color:var(--r)}.chip.y{color:var(--y);border-color:var(--y)}
+.kv{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px 10px;margin:8px 0}.kv div{background:var(--card2);border-radius:8px;padding:5px 8px}.kv span{display:block;color:var(--mu);font-size:.72rem}.kv b{font-variant-numeric:tabular-nums}
+.read{margin:.5em 0;font-size:.93rem}.prov{margin:.2em 0;color:var(--mu);font-size:.82rem}.m{color:var(--mu);font-size:.82rem}.big{font-size:1.25rem;font-weight:700;margin-bottom:4px}
+table{border-collapse:collapse;width:100%;font-size:.85rem;margin:6px 0}th,td{border-bottom:1px solid var(--bd);padding:4px 6px;text-align:left}th{color:var(--mu);font-weight:600}
+.ok{border-left:3px solid var(--g);padding-left:10px}.warn{border-left:3px solid var(--y);padding-left:10px;margin:6px 0}td.g{color:var(--g)}td.r{color:var(--r)}#cov,#eqres,#syn,#ana,#notes{overflow-x:auto}.bad{border-left:3px solid var(--r);padding-left:10px}summary{cursor:pointer;color:var(--a)}
+.tl{list-style:none;padding:0;font-size:.85rem}.tl .g{color:var(--g)}.tl .r{color:var(--r)}
+</style></head><body><main>
+<h1>Galaxy Confluence <small>1.1.1 · un solo indicatore · 1H e 4H · nessun segnale operativo</small></h1>
+<div class="panel"><h2>1 · Indicatore (sorgente di tutti i calcoli)</h2>
+ <textarea id="code" rows="9" spellcheck="false" aria-label="Codice dell'indicatore"></textarea><div id="ana" style="margin-top:8px"></div>
+ <div class="row"><label>Seed dell'EMA (ta.ema)<select id="seed"><option value="sma">SMA delle prime L barre (default)</option><option value="first">primo valore (da verificare)</option></select></label></div>
+ <div id="eqbadge"></div>
+ <details><summary>Verifica di equivalenza con TradingView</summary>
+  <p class="m">Esporta da TradingView la serie del grafico con i dati dell'indicatore (candela del delta e le linee «Bollinger EMA», «Upper Band», «Lower Band») e incollala qui: colonne <code>time, open, high, low, close, Bollinger EMA, Upper Band, Lower Band</code> (o i nomi open/max/min/last/ema/upper/lower). L'app ricalcola barra per barra con entrambe le ipotesi di seed e riporta gli scarti. Solo se coincide dichiara l'equivalenza.</p>
+  <textarea id="ref" rows="4" placeholder="time,open,high,low,close,Bollinger EMA,Upper Band,Lower Band"></textarea><div class="row"><button id="cmp">Confronta con TradingView</button></div><div id="eqres"></div></details></div>
+<div class="panel"><h2>2 · Dati</h2>
+ <div class="row"><label>Simbolo<input id="sym" value="QQQ" size="8"></label>
+  <label><span><input type="radio" name="md" id="modeI"> Import del delta originale (modalità di riferimento)</span></label>
+  <label><span><input type="radio" name="md" id="modeW"> Worker — SPERIMENTALE: delta approssimato da barre inferiori</span></label>
+  <label>Fuso orario<select id="tz"><option>Europe/Rome</option><option>America/New_York</option><option>UTC</option></select></label></div>
+ <div id="mImp"><p class="m">Incolla (o carica) la serie del delta di volume esportata per ogni timeframe: colonne <code>time, open, max, min, last</code> (anche con i nomi dell'indicatore). CSV o JSON. Servono almeno tante barre quante la lunghezza Bollinger per avere le bande. Le barre dell'ultima ora non chiusa restano provvisorie.</p>
+  <div class="grid"><div><label>1H <input type="file" id="f1H" accept=".csv,.txt,.json"></label><textarea id="t1H" rows="4" placeholder="time,open,max,min,last"></textarea></div><div><label>4H <input type="file" id="f4H" accept=".csv,.txt,.json"></label><textarea id="t4H" rows="4" placeholder="time,open,max,min,last"></textarea></div></div>
+  <div class="row"><button id="apply">Applica dati</button></div></div>
+ <div id="mWk" hidden><p class="m"><b>Modalità sperimentale — approssimazione dichiarata:</b> non è la funzione interna di TradingView. Il volume di ogni barra inferiore prende il segno di close−open (a parità, il segno precedente); delta cumulato dall'inizio della barra. 1H e 4H sono ricostruite dalle stesse barre inferiori, ancorate all'inizio della sessione regolare (metadati del provider o regola NYSE con ora legale; in assenza, prima barra del giorno e l'allineamento è dichiarato NON verificato); le barre fuori sessione sono escluse. L'equivalenza con le barre 4H di TradingView non è verificata. Con dati gratuiti lo storico delle barre da 15 min (60 giorni) dà circa 290 barre 1H: la dinamica parte appena ne sono state elaborate 300, accumulandole nello stato salvato se l'app viene usata con regolarità. Per la 4H le barre da 60 min (1 anno) bastano per le 300 barre, ma il delta di ogni barra 4H deriva da sole 4 barre orarie: misura molto più grossolana delle barre da 1 minuto previste di default dall'indicatore, quindi la serie NON è quella che mostra TradingView.</p>
+  <div class="row"><label>URL del Worker (https)<input id="wk" size="42" placeholder="https://…workers.dev"></label><label>Barre inferiori per la 1H<select id="ltf"><option value="1m">1 min (7 g)</option><option value="5m">5 min (60 g)</option><option value="15m" selected>15 min (60 g)</option></select></label><label>Barre inferiori per la 4H<select id="ltf4"><option value="60m" selected>60 min (1 anno)</option><option value="15m">15 min (60 g)</option><option value="5m">5 min (60 g)</option><option value="1m">1 min (7 g)</option></select></label><button id="load">Carica</button><label><span><input type="checkbox" id="auto"> aggiorna ogni minuto</span></label></div></div>
+ <div id="st" class="m" role="status"></div>
+ <h2 style="margin-top:12px">Copertura dello storico e qualità</h2><div id="cov"></div></div>
+<div class="panel"><h2>3 · Sintesi 1H / 4H</h2><div id="syn">—</div></div>
+<div class="grid" id="cards"></div>
+<div class="panel"><h2>Qualità dati e avvisi</h2><div id="notes"></div><div class="row"><button id="rc1H">Ricalcola 1H dai dati caricati</button><button id="rc4H">Ricalcola 4H dai dati caricati</button><button id="reset">Azzera lo stato salvato di questo simbolo</button></div></div>
+<div class="panel"><h2>Test del nucleo matematico</h2><p class="m">Dati sintetici: verificano le formule (non l'aspetto grafico). Non provano il collegamento con Worker o fonti reali.</p><button id="runtests">Esegui test</button><div id="tres"></div></div>
+<p class="m">Modello (convenzioni, non calibrate su dati): D adimensionale in [0,15–1,00]; Ds(h)=D0+(Dsmax−D0)(1−e^(−h/T)); v ← v+(kF·R−v/τ)·Δh; R=E−G con E=max(last,0)/A, G=max(−last,0)/A, A=max(|banda sup|,|banda inf|). Una osservazione per barra chiusa; la barra in formazione non altera lo stato. Movimento effettivo = segno di v; pressione = segno di R; sul limite fisico il movimento è nullo ma la pressione resta.</p>
+</main>
+<script>/* GALAXY CONFLUENCE — nucleo matematico (nessun accesso al DOM). Moduli: Hash, IndSrc (analisi del codice), IndCalc (indicatore),
+   Series (import/normalizzazione), Adapter (delta da barre inferiori), Engine (forze, dinamica, espansione strutturale, deviazione),
+   Sync (1H/4H), RenderMath (animazione), Store (persistenza), Tests. */
+var GC=(function(){
+'use strict';
+const GC={}, fin=Number.isFinite;
+
+/* ============ Hash ============ */
+GC.hash=function(s){ let h1=0x811c9dc5,h2=0x1b873593; for(let i=0;i<s.length;i++){ const c=s.charCodeAt(i); h1^=c; h1=Math.imul(h1,16777619)>>>0; h2=Math.imul(h2^c,2246822519)>>>0; h2=((h2<<13)|(h2>>>19))>>>0; } return h1.toString(16).padStart(8,'0')+h2.toString(16).padStart(8,'0'); };
+
+/* ============ IndSrc: analisi del codice dell'indicatore (nessuna esecuzione, nessuna formula inventata) ============ */
+GC.IndSrc={
+  strip(code){ return String(code).replace(/\r/g,'').replace(/\/\/[^\n]*/g,''); },
+  analyze(code){
+    const r={ok:false,reasons:[],params:{},uses:[],outputs:[],states:[],codeHash:null,version:null,notes:[]};
+    if(!code||!String(code).trim()){ r.reasons.push('nessun codice incollato'); return r; }
+    const s=this.strip(code), need=(c,m)=>{ if(!c) r.reasons.push(m); return !!c; };
+    r.codeHash=GC.hash(s.replace(/\s+/g,' ').trim());          // commenti e spaziatura non cambiano l'impronta
+    const mv=/\/\/\s*@version\s*=\s*(\d+)/.exec(String(code)); r.version=mv?+mv[1]:null;
+    const tup=/\[\s*(\w+)\s*,\s*(\w+)\s*,\s*(\w+)\s*,\s*(\w+)\s*\]\s*=\s*ta\.requestVolumeDelta\s*\(\s*(\w+)\s*\)/.exec(s);
+    if(!need(tup,'manca [open,max,min,last] = ta.requestVolumeDelta(timeframe)')) return r;
+    const [,vO,vX,vN,vL,vTf]=tup;
+    const src=new RegExp('(\\w+)\\s*=\\s*(\\w+)\\s*\\?\\s*\\(\\s*(\\w+)\\s*\\+\\s*(\\w+)\\s*\\)\\s*/\\s*2\\s*:\\s*(\\w+)').exec(s);
+    if(!need(src&&src[5]===vL&&((src[3]===vX&&src[4]===vN)||(src[3]===vN&&src[4]===vX)),'sorgente delle bande non riconosciuta: attesa  X = flagWick ? (max+min)/2 : last')) return r;
+    const [,vSrc,vWick]=src;
+    const ema=new RegExp('(\\w+)\\s*=\\s*ta\\.ema\\(\\s*'+vSrc+'\\s*,\\s*(\\w+)\\s*\\)').exec(s);
+    const sd=new RegExp('(\\w+)\\s*=\\s*ta\\.stdev\\(\\s*'+vSrc+'\\s*,\\s*(\\w+)\\s*\\)').exec(s);
+    if(!need(ema&&sd&&ema[2]===sd[2],'attesi ta.ema e ta.stdev sulla stessa sorgente e con la stessa lunghezza')) return r;
+    const [,vEma,vLen]=ema, vStd=sd[1];
+    const up=new RegExp('(\\w+)\\s*=\\s*'+vEma+'\\s*\\+\\s*(\\w+)\\s*\\*\\s*'+vStd).exec(s), lo=new RegExp('(\\w+)\\s*=\\s*'+vEma+'\\s*-\\s*(\\w+)\\s*\\*\\s*'+vStd).exec(s);
+    if(!need(up&&lo&&up[2]===lo[2],'attese bande  ema ± mult*stdev')) return r;
+    const [,vUp,vMult]=up, vLo=lo[1];
+    const fn=/(\w+)\s*\(\s*(\w+)\s*,\s*(\w+)\s*,\s*(\w+)\s*\)\s*=>/.exec(s);
+    if(!need(fn,'funzione colore (val, upBand, lowBand) non trovata')) return r;
+    const [,fName,pv,pu,pl]=fn;
+    const colOk=new RegExp('if\\s+'+pv+'\\s*>\\s*0').test(s)&&new RegExp(pv+'\\s*>=\\s*'+pu).test(s)&&new RegExp(pv+'\\s*<=\\s*'+pl).test(s)&&new RegExp(fName+'\\s*\\(\\s*'+vL+'\\s*,\\s*'+vUp+'\\s*,\\s*'+vLo+'\\s*\\)').test(s);
+    if(!need(colOk,'logica dei colori non riconosciuta (attesa: segno di last e confronto con le bande)')) return r;
+    const num=(v,t)=>{ const m=new RegExp(v+'\\s*=\\s*input\\.'+t+'\\(\\s*([-\\d.]+)').exec(s); return m?+m[1]:null; };
+    const len=num(vLen,'int'), mult=num(vMult,'float'), wick=new RegExp(vWick+'\\s*=\\s*input\\.bool\\(\\s*(true|false)').exec(s);
+    if(!need(len!=null&&len>=1&&fin(len),'lunghezza Bollinger non leggibile')||!need(mult!=null&&fin(mult),'moltiplicatore non leggibile')||!need(!!wick,'flag wick non leggibile')) return r;
+    const cu=/var\s+\w+\s*=\s*if\s+(\w+)/.exec(s), ctf=/(\w+)\s*=\s*input\.timeframe\(\s*"([^"]+)"/.exec(s), cflag=cu?new RegExp(cu[1]+'\\s*=\\s*input\\.bool\\(\\s*(true|false)').exec(s):null;
+    const auto=/timeframe\.isintraday\s*"(\w+)"/.exec(s);
+    if(!need(ctf&&cflag&&auto,'timeframe inferiore (custom/automatico) non leggibile')) return r;
+    r.params={bbLength:Math.round(len),bbMult:mult,useWicks:wick[1]==='true',useCustomTF:cflag[1]==='true',customTF:ctf[2],autoLTF:auto[1]};
+    r.uses=['ta.requestVolumeDelta','ta.ema (seed SMA)','ta.stdev (popolazione)'];
+    r.outputs=[
+      ['openVolume','delta di volume all\'apertura della barra (continuo, con segno, unità di volume)'],
+      ['maxVolume / minVolume','massimo / minimo del delta cumulato nella barra (continui)'],
+      ['lastVolume','delta alla chiusura della barra: valore guida dei colori (continuo, non normalizzato)'],
+      ['emaValue, stdDev','EMA e deviazione standard su '+r.params.bbLength+' barre di '+(r.params.useWicks?'(max+min)/2':'lastVolume')],
+      ['upperBand / lowerBand','ema ± '+r.params.bbMult+'·stdev (non centrate sullo zero)']];
+    r.states=[['bull_strong','last > 0 e last ≥ upperBand'],['bull_weak','last > 0 e last < upperBand'],['bear_strong','last ≤ 0 e last ≤ lowerBand'],['bear_weak','last ≤ 0 e last > lowerBand (last = 0 incluso: nessuno stato neutrale nel codice)']];
+    r.notes.push('Il delta riparte da zero a ogni barra: ogni barra chiusa è un\'osservazione.','Le bande esistono solo dopo '+r.params.bbLength+' barre valide (stdev).','Timeframe inferiore per grafici intraday (1H, 4H): '+(r.params.useCustomTF?r.params.customTF:r.params.autoLTF)+' minuti.');
+    r.ok=true; return r;
+  }
+};
+
+/* ============ IndCalc: ta.ema (seed SMA) e ta.stdev (popolazione) + stati dell'indicatore, incrementale e serializzabile ============ */
+GC.IndCalc=function(p,st){
+  const L=p.bbLength, alpha=2/(L+1); st=st||{win:[],n:0,ema:null,seed:0};
+  function push(bar){                                  // solo barre VALIDE (le mancanti non entrano nella finestra)
+    const x=p.useWicks?(bar.mx+bar.mn)/2:bar.l;
+    st.win.push(x); if(st.win.length>L) st.win.shift(); st.n++;
+    if(p.seed==='first'){ st.ema=st.n===1?x:alpha*x+(1-alpha)*st.ema; if(st.n<L) return {ready:false,n:st.n}; }   // variante da verificare: EMA che parte dal primo valore
+    else{                                                                                                      // default: seed = media semplice delle prime L osservazioni (come da fonti su Pine; NON verificato su dati TradingView)
+      if(st.n<L){ st.seed+=x; return {ready:false,n:st.n}; }
+      if(st.n===L){ st.seed+=x; st.ema=st.seed/L; } else st.ema=alpha*x+(1-alpha)*st.ema;
+    }
+    let m=0; for(const y of st.win) m+=y; m/=L; let v=0; for(const y of st.win) v+=(y-m)*(y-m);
+    const std=Math.sqrt(v/L), upper=st.ema+p.bbMult*std, lower=st.ema-p.bbMult*std, val=bar.l;
+    const state=val>0?(val>=upper?'bull_strong':'bull_weak'):(val<=lower?'bear_strong':'bear_weak');
+    return {ready:true,n:st.n,ema:st.ema,std,upper,lower,state};
+  }
+  return {push,state:st};
+};
+
+/* ============ Series: parsing, validazione, normalizzazione ============ */
+GC.Series={
+  parseTime(x){ if(x==null||x==='') return NaN; if(typeof x==='number') return x>=1e11?x/1000:x; const s=String(x).trim(); if(/^-?\d+(\.\d+)?$/.test(s)){ const n=+s; return n>=1e11?n/1000:n; } const d=Date.parse(s); return isNaN(d)?NaN:d/1000; },
+  num(x){ if(x==null) return null; if(typeof x==='number') return fin(x)?x:null; const s=String(x).trim().replace(/\s/g,''); if(s===''||/^(na|nan|null|undefined|-)$/i.test(s)) return null; const n=+s.replace(',','.'); return fin(n)?n:null; },
+  parseText(text){      /* CSV (, ; tab) o JSON; colonne: time, open, max, min, last (anche con nomi dell'indicatore). Valori assenti → null, mai 0. */
+    const out={rows:[],errors:[]}; text=String(text||'').trim(); if(!text){ out.errors.push('testo vuoto'); return out; }
+    const alias={t:'time',time:'time',timestamp:'time',date:'time',datetime:'time',o:'o',open:'o',openvolume:'o',max:'mx',high:'mx',maxvolume:'mx',h:'mx',min:'mn',low:'mn',minvolume:'mn',last:'l',close:'l',lastvolume:'l',c:'l',delta:'l',ema:'ema',emavalue:'ema',bollingerema:'ema',basis:'ema',upper:'up',upperband:'up',lower:'lo',lowerband:'lo'};
+    let objs=null;
+    if(text[0]==='['||text[0]==='{'){ try{ let j=JSON.parse(text); if(!Array.isArray(j)) j=j.data||j.bars||j.rows; if(!Array.isArray(j)) throw 0; objs=j.map(r=>{ if(Array.isArray(r)) return {time:r[0],o:r[1],mx:r[2],mn:r[3],l:r[4],ema:r[5],up:r[6],lo:r[7]}; const o={}; for(const k in r){ const a=alias[k.toLowerCase().replace(/[\s_]/g,'')]; if(a) o[a]=r[k]; } return o; }); }catch(e){ out.errors.push('JSON non valido'); return out; } }
+    else{
+      const lines=text.split(/\n/).map(l=>l.trim()).filter(Boolean), d=[';','\t',','].find(c=>lines[0].includes(c))||',', cells=lines.map(l=>l.split(d).map(x=>x.trim().replace(/^"|"$/g,'')));
+      let map=null, start=0; const h=cells[0].map(c=>alias[c.toLowerCase().replace(/[\s_]/g,'')]);
+      if(h.filter(Boolean).length>=4){ map=h; start=1; } else if(isNaN(GC.Series.parseTime(cells[0][0]))&&cells[0].length>=5){ map=['time','o','mx','mn','l']; start=1; } else map=['time','o','mx','mn','l'];
+      if(!(map.includes('time')&&map.includes('l')&&map.includes('mx')&&map.includes('mn')&&map.includes('o'))){ out.errors.push('colonne richieste: time, open, max, min, last'); return out; }
+      objs=cells.slice(start).map(c=>{ const o={}; map.forEach((k,i)=>{ if(k) o[k]=c[i]; }); return o; });
+    }
+    for(const o of objs){ const row={t:GC.Series.parseTime(o.time),o:GC.Series.num(o.o),mx:GC.Series.num(o.mx),mn:GC.Series.num(o.mn),l:GC.Series.num(o.l)}; if('ema' in o||'up' in o||'lo' in o){ row.ema=GC.Series.num(o.ema); row.up=GC.Series.num(o.up); row.lo=GC.Series.num(o.lo); } out.rows.push(row); }
+    return out;
+  },
+  normalize(rows,stepSec,opt){
+    opt=Object.assign({maxGapSec:120*3600},opt||{});
+    const rep={input:rows.length,dup:0,unsorted:false,missing:0,incoherent:0,badTs:0,closures:0,gaps:[]}, map=new Map(); let prev=-Infinity;
+    for(const r of rows){ if(!fin(r.t)){ rep.badTs++; continue; } if(r.t<prev) rep.unsorted=true; prev=r.t; if(map.has(r.t)) rep.dup++; map.set(r.t,r); }   // duplicato: vale l'ultima occorrenza
+    const ts=[...map.keys()].sort((a,b)=>a-b), bars=[];
+    for(let i=0;i<ts.length;i++){
+      const r=map.get(ts[i]); let valid=[r.o,r.mx,r.mn,r.l].every(x=>x!=null&&fin(x));
+      if(!valid) rep.missing++;
+      else{ const tol=1e-9*(Math.abs(r.mx)+Math.abs(r.mn)+1); if(r.mx<Math.max(r.o,r.l)-tol||r.mn>Math.min(r.o,r.l)+tol){ valid=false; rep.incoherent++; } }
+      bars.push({t:ts[i],o:r.o,mx:r.mx,mn:r.mn,l:r.l,valid,closed:r.closed,cov:r.cov,ema:r.ema,up:r.up,lo:r.lo});
+      if(i>0){ const g=ts[i]-ts[i-1]; if(g>stepSec*1.5){ if(g>opt.maxGapSec) rep.gaps.push({from:ts[i-1],to:ts[i]}); else rep.closures++; } }
+    }
+    return {bars,report:rep};
+  }
+};
+
+/* ============ Sessions: sessioni regolari (metadati del provider o regola NYSE con ora legale) ============ */
+GC.Sessions={
+  offsetSec(tz,utcMs){ const p=new Intl.DateTimeFormat('en-US',{timeZone:tz,hourCycle:'h23',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'}).formatToParts(new Date(utcMs)), g=k=>+p.find(x=>x.type===k).value;
+    return (Date.UTC(g('year'),g('month')-1,g('day'),g('hour'),g('minute'),g('second'))-Math.floor(utcMs/1000)*1000)/1000; },
+  zonedToUtc(y,m,d,hh,mm,tz){ let ms=Date.UTC(y,m-1,d,hh,mm); for(let i=0;i<3;i++) ms=Date.UTC(y,m-1,d,hh,mm)-GC.Sessions.offsetSec(tz,ms)*1000; return ms/1000; },
+  localDate(tz,tSec){ const p=new Intl.DateTimeFormat('en-CA',{timeZone:tz,year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(tSec*1000)); return p; },
+  nyseRegular(tz,tSec){ const [y,m,d]=GC.Sessions.localDate(tz,tSec).split('-').map(Number); return [GC.Sessions.zonedToUtc(y,m,d,9,30,tz),GC.Sessions.zonedToUtc(y,m,d,16,0,tz)]; },
+  fromMeta(meta){ const tp=meta&&meta.tradingPeriods; if(!tp) return []; const arr=Array.isArray(tp)?tp:tp.regular; if(!Array.isArray(arr)) return []; const out=[]; for(const day of arr) for(const s of (Array.isArray(day)?day:[day])) if(s&&fin(s.start)&&fin(s.end)&&s.end>s.start) out.push([s.start,s.end]); return out.sort((a,b)=>a[0]-b[0]); }
+};
+
+/* ============ Adapter: delta di volume APPROSSIMATO da barre a timeframe inferiore (non è la funzione interna di TradingView) ============
+   Regola dichiarata: segno del volume di ogni barra inferiore = segno di (close − open); a parità eredita il segno della barra precedente;
+   delta cumulato dall'inizio della barra: open=0, max/min = estremi del cumulato (0 incluso), last = valore finale.
+   Allineamento: le barre 1H/4H partono dall'inizio della sessione regolare (metadati del provider; in assenza, regola NYSE 9:30–16:00 per America/New_York con ora legale;
+   altrimenti prima barra del giorno, NON verificato). Barre fuori sessione escluse e contate. Equivalenza con le barre di TradingView NON verificata. */
+GC.Adapter={
+  approxDelta(ltf,stepSec,ltfSec,opt){
+    opt=Object.assign({tzOffsetSec:0,tz:null,sessions:null,nowSec:Date.now()/1000,sessEnd:null,minCov:.9,badTol:0},opt||{});
+    let sess=opt.sessions&&opt.sessions.length?opt.sessions.slice().sort((a,b)=>a[0]-b[0]):null, mode='metadati';
+    if(!sess&&opt.tz==='America/New_York'&&ltf.length){ const seen=new Map(); for(const b of ltf){ const d=GC.Sessions.localDate(opt.tz,b.t); if(!seen.has(d)) seen.set(d,GC.Sessions.nyseRegular(opt.tz,b.t)); } sess=[...seen.values()].sort((a,b)=>a[0]-b[0]); mode='regola NYSE 9:30–16:00 (ora legale inclusa), non da metadati'; }
+    if(!sess) mode='prima barra del giorno (NON verificato con la sessione ufficiale)';
+    const sIdx=t=>{ let lo=0,hi=sess.length-1; while(lo<=hi){ const m=(lo+hi)>>1; if(t<sess[m][0]) hi=m-1; else if(t>=sess[m][1]) lo=m+1; else return m; } return -1; };
+    const bk=new Map(); let prevDir=0, curDay=null, dayFirst=0, ambig=0, outside=0;
+    for(const b of ltf){
+      let key,day,sEnd=null;
+      if(sess){ const i=sIdx(b.t); if(i<0){ outside++; continue; } day=i; sEnd=sess[i][1]; key=sess[i][0]+Math.floor((b.t-sess[i][0])/stepSec)*stepSec; }
+      else{ day=Math.floor((b.t+opt.tzOffsetSec)/86400); if(day!==curDay){ curDay=day; dayFirst=b.t; } key=dayFirst+Math.floor((b.t-dayFirst)/stepSec)*stepSec; }
+      let B=bk.get(key); if(!B){ B={t:key,cum:0,mx:0,mn:0,n:0,bad:0,day,sEnd}; bk.set(key,B); }
+      if(!(fin(b.o)&&fin(b.c)&&fin(b.v)&&b.v>=0)){ B.bad++; continue; }
+      const dir=b.c>b.o?1:b.c<b.o?-1:prevDir; if(b.c===b.o) ambig++; if(b.c!==b.o) prevDir=dir;
+      B.cum+=dir*b.v; if(B.cum>B.mx) B.mx=B.cum; if(B.cum<B.mn) B.mn=B.cum; B.n++;
+    }
+    const keys=[...bk.keys()].sort((a,b)=>a-b), out=[];
+    keys.forEach((k,i)=>{ const B=bk.get(k), last=i===keys.length-1, dayEnd=last||bk.get(keys[i+1]).day!==B.day;
+      const endT=B.sEnd!=null?Math.min(B.sEnd,k+stepSec):k+stepSec, exp=B.sEnd!=null?Math.max(1,Math.round((endT-k)/ltfSec)):stepSec/ltfSec;
+      const cov=B.n/exp, covOk=(B.sEnd==null&&dayEnd)||cov>=opt.minCov, valid=B.bad<=opt.badTol&&B.n>0&&covOk;
+      const closed=!last||opt.nowSec>=endT||(opt.sessEnd!=null&&opt.nowSec>=opt.sessEnd);
+      out.push({t:k,o:0,mx:valid?B.mx:null,mn:valid?B.mn:null,l:valid?B.cum:null,closed,cov});
+    });
+    out.ambig=ambig; out.outside=outside; out.align=mode; out.nSess=sess?sess.length:null; return out;
+  }
+};
+
+/* ============ Modello: parametri (convenzioni del modello, NON calibrati) ============ */
+GC.defaultModel={
+  common:{D0:.5,Dmin:.15,Dmax:1,Dsmax:.8,FMAX:2,epsFrac:.25,maxGapH:120,staleH:100},
+  '1H':{stepH:1,kF:.01,tauV:3,T:120},
+  '4H':{stepH:4,kF:.0006,tauV:12,T:480}
+};
+
+/* ============ Engine: forze → dinamica → espansione strutturale → deviazione (una osservazione per barra chiusa) ============ */
+GC.Engine=function(tf,model,indParams,saved){
+  const M=Object.assign({},model.common,model[tf]), epsV=M.epsFrac*M.kF*M.tauV, sh=M.stepH*3600, HIST=800;
+  const fresh=()=>({v:1,tf,lastT:null,lastSig:null,ind:{win:[],n:0,ema:null,seed:0},nDyn:0,D:M.D0,vel:0,acc:0,Ds:M.D0,h:0,obs:[],
+    q:{missing:0,discont:0,revised:0,nObs:0,warm:0,scaleNull:0},disc:[]});
+  let S=saved&&saved.v===1&&saved.tf===tf?saved:fresh();
+  const Dsf=h=>M.D0+(M.Dsmax-M.D0)*(1-Math.exp(-h/M.T)), dsdt=h=>(M.Dsmax-M.D0)/M.T*Math.exp(-h/M.T);
+  const sig=b=>b.valid?[b.o,b.mx,b.mn,b.l].join('|'):'x';
+  function dirOf(v){ return v>epsV?1:v<-epsV?-1:0; }
+  function push(bar){
+    if(S.lastT!=null&&bar.t<=S.lastT){ if(bar.t===S.lastT&&S.lastSig!=null&&sig(bar)!==S.lastSig) S.q.revised++; return {skipped:true}; }
+    if(S.lastT!=null&&(bar.t-S.lastT)/3600>M.maxGapH){ const q=S.q, d=S.disc.concat([{from:S.lastT,to:bar.t}]); S=fresh(); S.q=q; S.q.discont++; S.disc=d; }   // buco anomalo: la dinamica riparte (dichiarato)
+    S.lastT=bar.t; S.lastSig=sig(bar);
+    const sgv=GC.hash(sig(bar)).slice(0,8), rec=o=>{ o.sg=sgv; S.obs.push(o); if(S.obs.length>HIST) S.obs.shift(); return o; };
+    if(!bar.valid){ S.q.missing++; return rec({t:bar.t,status:'mancante'}); }
+    const ic=GC.IndCalc(indParams,S.ind), ind=ic.push(bar);
+    if(!ind.ready){ S.q.warm=ind.n; return rec({t:bar.t,status:'warmup',n:ind.n}); }
+    const A=Math.max(Math.abs(ind.upper),Math.abs(ind.lower));
+    if(!fin(A)||A===0){ S.q.scaleNull++; return rec({t:bar.t,status:'scala nulla',state:ind.state}); }   // forze non definibili: NON si assume zero
+    const E=Math.min(Math.max(bar.l,0)/A,M.FMAX), G=Math.min(Math.max(-bar.l,0)/A,M.FMAX), R=E-G, dt=M.stepH;
+    let v=S.vel+(M.kF*R-S.vel/M.tauV)*dt, D=S.D+v*dt;
+    let lim=0; if(D>=M.Dmax){ D=M.Dmax; if(v>0){ v=0; lim=1; } } else if(D<=M.Dmin){ D=M.Dmin; if(v<0){ v=0; lim=-1; } }   // urto anelastico sul limite fisico
+    const a=(v-S.vel)/dt; S.vel=v; S.D=D; S.acc=a; S.nDyn++; S.h=S.nDyn*dt; S.Ds=Dsf(S.h);
+    S.q.nObs++;
+    const o={t:bar.t,status:'ok',l:bar.l,state:ind.state,ema:ind.ema,std:ind.std,upper:ind.upper,lower:ind.lower,A,E,G,R,D,v,a,Ds:S.Ds,dsdt:dsdt(S.h),dev:D-S.Ds,h:S.h,lim,wall:D>=M.Dmax?1:D<=M.Dmin?-1:0,movDir:dirOf(v),pressDir:R>=M.epsFrac?1:R<=-M.epsFrac?-1:0,decel:Math.abs(v)>epsV&&v*a<0,faster:v>dsdt(S.h)};
+    return rec(o);
+  }
+  function pushSeries(bars,nowSec){      /* barre chiuse → stato definitivo (una sola volta); l'ultima barra non chiusa → solo provvisoria */
+    let forming=null; for(const b of bars){ const closed=b.closed!==undefined?b.closed:(b.t+sh<=nowSec); if(closed) push(b); else forming=b; }
+    return forming;
+  }
+  function peek(bar){ const c=GC.Engine(tf,model,indParams,JSON.parse(JSON.stringify(S))); const o=c.push(bar); return o; }   // calcolo ipotetico su copia: non tocca lo stato
+  function compare(bars){      /* classifica i dati presentati rispetto allo stato: incrementale / correzione / più vecchi / senza sovrapposizione */
+    const L=S.lastT, m=new Map(S.obs.map(o=>[o.t,o.sg])); let overlap=0,differ=0,fresh=0,beyond=0;
+    for(const b of bars){ if(L==null||b.t>L){ fresh++; continue; } const g=m.get(b.t); if(g===undefined){ beyond++; continue; } overlap++; if(g!==GC.hash(sig(b)).slice(0,8)) differ++; }
+    const first=bars.length?bars[0].t:null, lastB=bars.length?bars[bars.length-1].t:null;
+    let kind='prima'; if(L!=null){ kind=differ>0?'correzione':(lastB<L?'piu_vecchi':(fresh>0?(overlap>0||beyond>0?'incrementale':'senza_sovrapposizione'):'nessuna_novita')); }
+    return {kind,overlap,differ,fresh,beyond,first,last:lastB};
+  }
+  function last(){ for(let i=S.obs.length-1;i>=0;i--) if(S.obs[i].status==='ok') return S.obs[i]; return null; }
+  function quality(nowSec){
+    const lo=S.obs[S.obs.length-1], L=indParams.bbLength, ageH=S.lastT!=null?(nowSec-S.lastT)/3600:null;
+    const ready=!!last(), stale=ageH==null||ageH>M.staleH, lastStatus=lo?lo.status:null;
+    let state='ok', why=[];
+    if(!ready){ state='warmup'; why.push('riscaldamento indicatore: '+S.q.warm+'/'+L+' barre valide (bande non ancora definite)'); }
+    if(stale&&ready){ state='non aggiornata'; why.push('ultima barra chiusa di '+ageH.toFixed(1)+' h fa (oltre '+M.staleH+' h)'); }
+    if(ready&&lastStatus&&lastStatus!=='ok'){ state='non aggiornata'; why.push('ultima barra: '+lastStatus+' (dinamica ferma all\'ultima osservazione valida)'); }
+    return {state,why,ageH,ready,stale,q:S.q,disc:S.disc};
+  }
+  return {push,pushSeries,peek,compare,last,quality,get state(){ return S; },cfg:M,epsV,dirOf,dsdt,Dsf,serialize(){ return JSON.stringify(S); }};
+};
+
+/* ============ Sync: confronto 1H / 4H (descrittivo, nessun segnale operativo) ============ */
+GC.Sync={
+  classify(o1,o4){
+    if(!o1||!o4) return {code:'incomplete',label:'Dati insufficienti',text:'Almeno una timeframe non ha ancora una dinamica valida: nessuna lettura di sintesi.',mods:[]};
+    const b1=o1.lim||0, b4=o4.lim||0, d1=b1?0:o1.movDir, d4=b4?0:o4.movDir;     // un vincolo fisico che arresta il moto: il movimento effettivo è nullo, la pressione resta
+    const side=l=>l>0?'massimo':'minimo', pr=o=>o.lim>0?'rialzista':'ribassista';
+    let code,label,text;
+    if(b1&&b4){ code='blocked'; label='1H e 4H ferme su un limite fisico'; text=`La 1H è ferma sul limite ${side(b1)} (pressione ${pr(o1)}) e la 4H sul limite ${side(b4)} (pressione ${pr(o4)}): il moto è vincolato, non si sta muovendo.`; }
+    else if((b1||b4)&&d1===0&&d4===0){ const t=b1?'1H':'4H', o=b1?o1:o4, l=b1?b1:b4; code='blocked'; label=`${t} ferma su un limite fisico`; text=`La ${t} è ferma sul limite ${side(l)} (pressione ${pr(o)}); l'altra timeframe è sotto la soglia di neutralità.`; }
+    else if(d1>0&&d4>0){ code='both_up'; label='1H e 4H rialziste'; text='Concordanza tra breve e medio periodo: in entrambe le scale le galassie si allontanano.'; }
+    else if(d1<0&&d4<0){ code='both_down'; label='1H e 4H ribassiste'; text='Concordanza negativa: in entrambe le scale le galassie si avvicinano.'; }
+    else if(d4>0&&d1<0){ code='up4_down1'; label='4H rialzista, 1H ribassista'; text='Possibile correzione di breve periodo all\'interno di una struttura rialzista.'; }
+    else if(d4<0&&d1>0){ code='down4_up1'; label='4H ribassista, 1H rialzista'; text='Possibile rimbalzo di breve periodo all\'interno di una struttura ribassista.'; }
+    else if(d1===0&&d4===0){ code='both_flat'; label='Entrambe neutrali'; text='Né la 1H né la 4H hanno un movimento rilevante: la velocità è sotto la soglia di neutralità.'; }
+    else { const mv=d1!==0?'1H':'4H', ot=d1!==0?'4H':'1H', blk=(d1!==0?b4:b1); code='one_moving'; label=blk?'Una timeframe in movimento, l\'altra bloccata su un limite':'Una timeframe in movimento, l\'altra ferma'; text=`La ${mv} è in movimento (${(d1!==0?d1:d4)>0?'allontanamento':'avvicinamento'}), la ${ot} ${blk?'è ferma sul limite '+side(blk)+' (pressione '+pr(d1!==0?o4:o1)+')':'è sotto la soglia di neutralità'}.`; }
+    const mods=[], dec1=o1.decel&&!b1, dec4=o4.decel&&!b4;
+    if(dec1&&!dec4&&d4!==0) mods.push('la 1H sta rallentando mentre la 4H prosegue'); if(dec4&&!dec1&&d1!==0) mods.push('la 4H sta rallentando mentre la 1H prosegue'); if(dec1&&dec4) mods.push('entrambe stanno rallentando');
+    for(const [t,o] of [['1H',o1],['4H',o4]]) if(!o.lim&&o.movDir!==0&&o.pressDir!==0&&o.movDir!==o.pressDir) mods.push(`${t}: pressione opposta al movimento (il moto prosegue per inerzia)`);
+    return {code,label,text,mods};
+  }
+};
+
+/* ============ RenderMath: animazione indipendente dal modello (sola lettura) ============ */
+GC.RenderMath={
+  smooth(shown,target,dtMs,tauMs){ if(!fin(shown)) return target; return target+(shown-target)*Math.exp(-dtMs/tauMs); },   // composizione esatta: indipendente dal frame rate
+  sepPx(D,Dmin,Dmax,minPx,maxPx){ const u=Math.min(1,Math.max(0,(D-Dmin)/(Dmax-Dmin))); return minPx+u*(maxPx-minPx); }
+};
+
+/* ============ Store: persistenza con chiave di configurazione ============ */
+GC.Store={
+  cfgHash(codeHash,indParams,modelTf,extra){ return GC.hash(JSON.stringify([codeHash,indParams,modelTf,extra||null])); },
+  key(sym,tf,h){ return 'gc2|'+sym+'|'+tf+'|'+h; },
+  save(st,key,state){ try{ st.setItem(key,JSON.stringify(state)); return true; }catch(e){ return false; } },
+  load(st,key){ try{ const s=st.getItem(key); return s?JSON.parse(s):null; }catch(e){ return null; } },
+  otherKeys(st,sym,tf,h){ const out=[]; try{ for(let i=0;i<st.length;i++){ const k=st.key(i); if(k&&k.indexOf('gc2|'+sym+'|'+tf+'|')===0&&k!==GC.Store.key(sym,tf,h)) out.push(k); } }catch(e){} return out; }
+};
+
+/* ============ Equiv: confronto barra per barra con un export reale di TradingView (l'unica prova di fedeltà possibile) ============ */
+GC.Equiv={
+  compare(rows,params,opt){
+    opt=Object.assign({tolRel:1e-4,seeds:['sma','first']},opt||{});
+    const n=GC.Series.normalize(rows,3600,{maxGapSec:1e12}), out={bars:n.bars.length,seeds:{},report:n.report,L:params.bbLength};
+    const hasRef=n.bars.some(b=>b.ema!=null||b.up!=null||b.lo!=null);
+    if(!hasRef){ out.error='il file non contiene colonne di riferimento (ema / upper / lower)'; return out; }
+    for(const seed of opt.seeds){
+      const ic=GC.IndCalc(Object.assign({},params,{seed})), r={n:0,nBands:0,maxRel:0,maxAbs:0,maxRelLate:0,nLate:0,stN:0,stOk:0,first:null,seg:[]}; let k=0;
+      for(const b of n.bars){ if(!b.valid) continue; const x=ic.push(b); k++; if(!x.ready) continue;
+        for(const [mine,ref] of [[x.ema,b.ema],[x.upper,b.up],[x.lower,b.lo]]){ if(ref==null||!fin(ref)) continue; const ab=Math.abs(mine-ref), rl=ab/Math.max(Math.abs(ref),1); r.n++; if(rl>r.maxRel) r.maxRel=rl; if(ab>r.maxAbs) r.maxAbs=ab; if(k>2*params.bbLength){ r.nLate++; if(rl>r.maxRelLate) r.maxRelLate=rl; } }
+        if(b.up!=null&&b.lo!=null){ const l=b.l, ref=l>0?(l>=b.up?'bull_strong':'bull_weak'):(l<=b.lo?'bear_strong':'bear_weak'); r.stN++; if(ref===x.state) r.stOk++; }
+        if(k%params.bbLength===0||k===n.bars.length) r.seg.push([k,r.maxRel]);
+      }
+      r.pass=r.n>=params.bbLength&&r.maxRel<=opt.tolRel; out.seeds[seed]=r;
+    }
+    return out;
+  }
+};
+GC.Store.metaDiff=function(prev,cur){ if(!prev) return null; const d=[]; if(prev.codeHash!==cur.codeHash) d.push('codice dell\'indicatore'); if(JSON.stringify(prev.params)!==JSON.stringify(cur.params)) d.push('parametri dell\'indicatore'); if(prev.src!==cur.src) d.push('sorgente/metodo dei dati'); if(prev.model!==cur.model) d.push('parametri del modello'); return d; };
+return GC;
+})();
+if(typeof module!=='undefined') module.exports=GC;
+</script><script>/* Test del nucleo matematico (dati SINTETICI). Eseguibile in Node e nella pagina: GC.Tests.run() */
+(function(GC){
+GC.Tests={ run(){
+  const R=[], T=(n,c,d)=>R.push({n,ok:!!c,d:d||''}), near=(a,b,e)=>Math.abs(a-b)<=(e||1e-9), NOW=2e9;
+  const P={bbLength:20,bbMult:1,useWicks:false}, M=GC.defaultModel, H=3600;
+  let seed=12345; const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+  const mk=(vals,step,t0)=>vals.map((l,i)=>({t:(t0||1.7e9)+i*step,o:0,mx:l==null?null:Math.max(l,0),mn:l==null?null:Math.min(l,0),l:l==null?null:l,valid:l!=null}));
+  const eng=(tf,bars,P2)=>{ const e=GC.Engine(tf,M,P2||P); e.pushSeries(bars,NOW); return e; };
+  const noise=n=>Array.from({length:n},()=>(rnd()<.5?-1:1)*(.5+rnd()));
+  const okObs=e=>e.state.obs.filter(o=>o.status==='ok');
+  const c1=M.common, m1=Object.assign({},c1,M['1H']);
+
+  /* 0) Indicatore: EMA/stdev contro ricalcolo ingenuo */
+  { const v=Array.from({length:60},(_,i)=>Math.sin(i/3)*10+(i%7)); const e=eng('1H',mk(v,H)); const o=e.state.obs[59];
+    const w=v.slice(40); const m=w.reduce((a,b)=>a+b)/20, sd=Math.sqrt(w.reduce((a,b)=>a+(b-m)**2,0)/20); let ema=v.slice(0,20).reduce((a,b)=>a+b)/20; const al=2/21; for(let i=20;i<60;i++) ema=al*v[i]+(1-al)*ema;
+    T('0 · EMA (seed SMA) e stdev (popolazione) coincidono con il ricalcolo indipendente',near(o.ema,ema,1e-9)&&near(o.std,sd,1e-9)&&near(o.upper,ema+sd,1e-9)&&near(o.lower,ema-sd,1e-9)); }
+  { const e=eng('1H',mk([...noise(25),3,2,-1,-2,0],H)), st=okObs(e).slice(-5).map(o=>o.state); const ex=e.state.obs.slice(-5);
+    T('0 · stati dell\'indicatore: segno di last e confronto con le bande',ex.every(o=>o.state==='bull_strong'||o.state==='bull_weak'||o.state==='bear_strong'||o.state==='bear_weak')&&ex[4].state.startsWith('bear')&&ex[0].state.startsWith('bull'),st.join(',')); }
+  /* 1) rialzista costante */
+  { const bars=mk(Array(20+80).fill(5),H), e=eng('1H',bars), ob=okObs(e); const kF=m1.kF,tau=m1.tauV,q=1-1/tau; let ok=true,D=m1.D0,vp=null,hit=false;
+    ob.forEach((o,i)=>{ const n=i+1; if(!hit){ const v=kF*tau*(1-Math.pow(q,n)); D+=v; if(D>=m1.Dmax){ hit=true; } else ok=ok&&near(o.v,v,1e-12)&&near(o.D,D,1e-12); } ok=ok&&o.state==='bull_strong'&&o.E===1&&o.G===0&&o.R===1; });
+    const l=ob[ob.length-1]; T('1 · rialzista costante: v e D seguono la forma chiusa v=kF·τ·(1−qⁿ); al limite Dmax: movimento 0, pressione +1, contatto con la barriera',ok&&hit&&l.D===m1.Dmax&&l.v===0&&l.lim===1&&l.wall===1&&l.movDir===0&&l.pressDir===1,'D finale='+l.D); }
+  /* 2) ribassista costante */
+  { const e=eng('1H',mk(Array(100).fill(-5),H)), l=e.last(); T('2 · ribassista costante: G=1, D scende fino a Dmin; sul limite movimento 0, pressione −1',l.D===m1.Dmin&&l.G===1&&l.E===0&&l.lim===-1&&l.wall===-1&&l.movDir===0&&l.pressDir===-1&&l.state==='bear_strong'); }
+  /* 3) neutrale costante / bilanciata */
+  { const e=eng('1H',mk(Array(60).fill(0),H)); const o=e.state.obs[59];
+    T('3 · delta costante 0: scala nulla → forze NON definite (non zero), D invariata',o.status==='scala nulla'&&e.state.D===m1.D0&&e.state.q.nObs===0&&e.state.q.scaleNull>0); }
+  { const v=[]; for(let i=0;i<200;i++) v.push(i%2?1:-1); const e=eng('1H',mk(v,H)), ob=okObs(e); const mxD=Math.max(...ob.map(o=>Math.abs(o.D-m1.D0))), l=ob[ob.length-1];
+    T('3 · alternanza simmetrica ±1: D oscilla in banda stretta (<6% della corsa) e la direzione resta neutrale (soglia 25% della velocità limite > ampiezza di regime 20%)',mxD<.05&&ob.slice(-40).every(o=>o.movDir===0),'max|D−D0|='+mxD.toExponential(2)); }
+  /* 4) alternanza di blocchi rialzisti/ribassisti */
+  { const v=[...noise(20)]; for(let b=0;b<6;b++) for(let i=0;i<12;i++) v.push(b%2?-4:4); const e=eng('1H',mk(v,H)), ob=okObs(e); const dirs=new Set(ob.map(o=>o.movDir));
+    T('4 · alternanza di blocchi: la direzione cambia e D resta nei limiti fisici',dirs.has(1)&&dirs.has(-1)&&ob.every(o=>o.D>=m1.Dmin&&o.D<=m1.Dmax)); }
+  /* 5) forze contrapposte e smorzamento dell'inerzia */
+  { const v=[...noise(25),...Array(10).fill(6),...Array(6).fill(0)]; const e=eng('1H',mk(v,H)), ob=okObs(e); const i0=ob.length-6; const vb=ob[i0-1].v; let ok=vb>0, q=1-1/m1.tauV, D0=ob[i0-1].D;
+    for(let k=0;k<6;k++){ const o=ob[i0+k]; ok=ok&&o.R===0&&near(o.v,vb*Math.pow(q,k+1),1e-12)&&o.D>(k?ob[i0+k-1].D:D0); }
+    T('5 · forze compensate (R=0): la velocità si smorza esponenzialmente (×(1−Δh/τ) per barra) e D continua a muoversi, senza arresto istantaneo',ok); }
+  { const v=[...noise(25),...Array(10).fill(6),-6]; const e=eng('1H',mk(v,H)), ob=okObs(e), a=ob[ob.length-2], b=ob[ob.length-1];
+    T('5 · inversione di segno: la velocità non cambia istantaneamente (inerzia)',a.v>0&&b.v>0&&b.v<a.v&&b.D>a.D,'v '+a.v.toFixed(4)+'→'+b.v.toFixed(4)); }
+  /* 6/7) espansione strutturale */
+  { const mkRun=x=>{ const e=eng('1H',mk([...noise(25),...Array(40).fill(x)],H)); return okObs(e); }; const up=mkRun(5), dn=mkRun(-5);
+    const same=up.slice(0,30).every((o,i)=>o.Ds===dn[i].Ds&&o.h===dn[i].h);
+    T('6 · Ds identica in fase rialzista e ribassista (non dipende dai segnali) e strettamente crescente',same&&dn.every((o,i)=>i===0||o.Ds>dn[i-1].Ds));
+    const i=dn.findIndex((o,j)=>j>=8&&o.v<-.005); T('6 · contrazione relativa con espansione strutturale: v<0 (galassie che si avvicinano) mentre dDs/dh>0, Ds cresce e la deviazione diminuisce',i>0&&dn[i].v<0&&dn[i].dsdt>0&&dn[i].Ds>dn[i-1].Ds&&dn[i].dev<dn[i-1].dev);
+    const f=up.findIndex(o=>o.faster); T('7 · movimento relativo più veloce dell\'espansione: v > dDs/dh nella fase di spinta; Ds sempre < Dsmax',f>=0&&up.every(o=>o.Ds<m1.Dsmax)&&up[f].v>up[f].dsdt); }
+  { const e=eng('4H',mk([...noise(25),...Array(60).fill(-5)],4*H)), ob=okObs(e); T('7 · 4H: dopo la saturazione della contrazione, Ds continua a salire (deviazione negativa che cresce in modulo)',ob[ob.length-1].dev<ob[ob.length-10].dev||ob[ob.length-1].D===m1.Dmin); }
+  /* normalizzazione 1H vs 4H: stessa fisica per ora */
+  { const a=eng('1H',mk([...noise(25),...Array(5).fill(5)],H)).last(), b=eng('4H',mk([...noise(25),...Array(5).fill(5)],4*H)).last();
+    T('3-4 · 1H e 4H hanno stato, parametri e unità (per ora) separati: stesso input → velocità per ora diverse, non confrontate grezze',a.v!==b.v&&a.h===11&&b.h===44&&near(b.dsdt*4,a.dsdt,1e-12),'h1H='+a.h+', h4H='+b.h); }
+  /* 8/9) sincronizzazione */
+  { const up=(tf,s)=>eng(tf,mk([...noise(25),...Array(4).fill(5)],s)).last(), dn=(tf,s)=>eng(tf,mk([...noise(25),...Array(4).fill(-5)],s)).last();
+    const c=(o1,o4)=>GC.Sync.classify(o1,o4).code;
+    T('8 · concordanza rialzista e ribassista',c(up('1H',H),up('4H',4*H))==='both_up'&&c(dn('1H',H),dn('4H',4*H))==='both_down');
+    T('9 · discordanza: correzione (4H↑ 1H↓) e rimbalzo (4H↓ 1H↑)',c(dn('1H',H),up('4H',4*H))==='up4_down1'&&c(up('1H',H),dn('4H',4*H))==='down4_up1');
+    const flat=eng('1H',mk([...noise(25),...Array(3).fill(0.001)],H)).last();
+    T('9 · casi neutrale / una sola in movimento / dati insufficienti',c({movDir:0,decel:false},{movDir:0,decel:false})==='both_flat'&&c({movDir:1,decel:false},{movDir:0,decel:false})==='one_moving'&&c(null,{movDir:1})==='incomplete');
+    const s=GC.Sync.classify({movDir:1,decel:true},{movDir:1,decel:false}); T('9 · una timeframe in movimento e l\'altra in rallentamento (modificatore)',s.code==='both_up'&&s.mods.some(x=>x.includes('1H sta rallentando'))); }
+  /* 10) dati mancanti e duplicati */
+  { const base=[...noise(25),...Array(15).fill(4)]; const full=mk(base,H); const withMiss=full.map((b,i)=>(i===30||i===31)?Object.assign({},b,{valid:false,o:null,mx:null,mn:null,l:null}):b);
+    const e1=eng('1H',withMiss), e2=eng('1H',full.filter((_,i)=>i!==30&&i!==31)); 
+    T('10 · barre mancanti: nessuno zero inserito; la finestra e lo stato equivalgono alla serie senza quelle barre',e1.state.q.missing===2&&near(e1.state.D,e2.state.D,1e-12)&&near(e1.state.vel,e2.state.vel,1e-12)&&near(e1.state.Ds,e2.state.Ds,1e-12));
+    const rows=full.map(b=>({t:b.t,o:b.o,mx:b.mx,mn:b.mn,l:b.l})); rows.push(Object.assign({},rows[10])); rows.push({t:rows[12].t,o:null,mx:null,mn:null,l:null}); const first=rows[12];
+    const nz=GC.Series.normalize(rows.reverse(),H); T('10 · duplicati e disordine: rilevati e contati (vale l\'ultima occorrenza); righe con valori vuoti → non valide',nz.report.dup===2&&nz.report.unsorted&&nz.bars.length===40&&nz.bars.every((b,i,a)=>i===0||b.t>a[i-1].t)&&nz.bars[12].valid&&nz.bars[12].l===first.l);
+    const nm=GC.Series.normalize([{t:1,o:0,mx:1,mn:0,l:null},{t:2,o:0,mx:1,mn:0,l:1}],H); T('10 · riga con valore vuoto → barra non valida (l resta null, mai 0)',nm.report.missing===1&&nm.bars[0].valid===false&&nm.bars[0].l===null);
+    const bad=GC.Series.normalize([{t:1,o:0,mx:1,mn:0,l:5}],H); T('10 · OHLC del delta incoerente → barra non valida, non corretta',bad.bars[0].valid===false&&bad.report.incoherent===1);
+    const g=GC.Series.normalize(full.slice(0,5).concat(full.slice(5).map(b=>Object.assign({},b,{t:b.t+10*86400}))),H); const eg=eng('1H',g.bars);
+    T('10 · buco temporale anomalo (>120 h): dinamica riparte e viene dichiarato',g.report.gaps.length===1&&eg.state.q.discont===1&&eg.state.disc.length===1);
+    const cl=GC.Series.normalize(full.slice(0,5).concat(full.slice(5).map(b=>Object.assign({},b,{t:b.t+16*H}))),H); T('10 · pausa di mercato (16 h) non è un buco anomalo',cl.report.gaps.length===0&&cl.report.closures===1); }
+  /* parsing */
+  { const p=GC.Series.parseText('time,openVolume,maxVolume,minVolume,lastVolume\n1700000000,0,10,-5,3\n1700003600,0,,-1,\n2023-11-14T22:13:20Z,0,4,-2,1'); 
+    T('parsing CSV con nomi dell\'indicatore: celle vuote → null (mai 0), ISO e unix riconosciuti',p.rows.length===3&&p.rows[1].mx===null&&p.rows[1].l===null&&p.rows[0].t===1700000000&&p.rows[2].t===1700000000&&p.rows[1].t===1700003600);
+    const j=GC.Series.parseText('[[1700000000,0,10,-5,3],{"time":1700003600,"open":0,"max":2,"min":-1,"last":1}]'); T('parsing JSON (array e oggetti)',j.rows.length===2&&j.rows[1].l===1); }
+  /* 11) refresh senza alterare lo stato; barra in formazione */
+  { const bars=mk([...noise(25),...Array(30).fill(3)],H), e=GC.Engine('1H',M,P); e.pushSeries(bars,NOW); const s1=e.serialize(); e.pushSeries(bars,NOW); e.pushSeries(bars,NOW+5); const s2=e.serialize();
+    T('11 · ricaricare la stessa serie più volte non crea osservazioni né cambia velocità/accelerazione',s1===s2&&e.state.q.nObs===36);
+    const nowMid=bars[bars.length-1].t+H/2, e2=GC.Engine('1H',M,P); const form=e2.pushSeries(bars,nowMid), before=e2.serialize(); const pv=e2.peek({t:bars[bars.length-1].t+H,o:0,mx:9,mn:-9,l:-9,valid:true}); 
+    T('11 · la barra in formazione è solo provvisoria: peek non modifica lo stato e l\'ultima barra non chiusa non entra nel modello',form&&form.t===bars[bars.length-1].t&&e2.serialize()===before&&pv.status==='ok'&&e2.state.lastT===bars[bars.length-2].t);
+    const e3=GC.Engine('1H',M,P); e3.pushSeries(bars,NOW); const rev=bars.map(b=>Object.assign({},b)); rev[rev.length-1].l=-77; e3.pushSeries(rev,NOW); T('11 · revisione di una barra già elaborata: segnalata, stato non riscritto',e3.state.q.revised===1&&e3.serialize()===s1.replace(/"revised":0/,'"revised":1')); }
+  /* 12) cambio del codice */
+  { const code=`//@version=6
+indicator("x")
+useCustomTimeframeInput = input.bool(false, "c")
+lowerTimeframeInput     = input.timeframe("1", "L")
+var lowerTimeframe = if useCustomTimeframeInput
+    lowerTimeframeInput
+else
+    if timeframe.isseconds
+        "1S"
+    else if timeframe.isintraday
+        "1"
+    else
+        "60"
+bbLength   = input.int(300, "Bollinger Length", minval=1)
+bbMult     = input.float(1.0, "Bollinger Multiplier", minval=0.1)
+useWicksForBB = input.bool(false, "w")
+[openVolume, maxVolume, minVolume, lastVolume] = ta.requestVolumeDelta(lowerTimeframe)
+volumeForBB = useWicksForBB ? (maxVolume + minVolume) / 2 : lastVolume
+emaValue   = ta.ema(volumeForBB, bbLength)
+stdDev     = ta.stdev(volumeForBB, bbLength)
+upperBand  = emaValue + bbMult * stdDev
+lowerBand  = emaValue - bbMult * stdDev
+f_getBarColor(val, upBand, lowBand) =>
+    if val > 0
+        if val >= upBand
+            color.teal
+        else
+            color.teal
+    else
+        if val <= lowBand
+            color.red
+        else
+            color.red
+barColor = f_getBarColor(lastVolume, upperBand, lowerBand)`;
+    const a=GC.IndSrc.analyze(code), b=GC.IndSrc.analyze(code.replace('indicator("x")','indicator("x") // commento\n\n')), c=GC.IndSrc.analyze(code.replace('input.int(300','input.int(50')), d=GC.IndSrc.analyze(code.replace('ta.stdev(volumeForBB','ta.stdev(lastVolume')), e=GC.IndSrc.analyze('plot(ta.rsi(close,14))'), f=GC.IndSrc.analyze('');
+    T('12 · analisi del codice: parametri letti dal sorgente (300, 1.0, wick=false, TF inferiore "1")',a.ok&&a.params.bbLength===300&&a.params.bbMult===1&&a.params.useWicks===false&&a.params.autoLTF==='1'&&a.states.length===4);
+    T('12 · commenti/spaziatura non cambiano l\'impronta; un parametro sì',a.codeHash===b.codeHash&&a.codeHash!==c.codeHash&&c.params.bbLength===50);
+    T('12 · codice diverso o non riconosciuto: adattatore rifiutato con motivo (nessuna simulazione)',!d.ok&&!e.ok&&!f.ok&&e.reasons.length>0);
+    const mh=GC.Store.cfgHash, h1=mh(a.codeHash,a.params,M['1H']), h2=mh(c.codeHash,c.params,M['1H']), h3=mh(a.codeHash,a.params,M['4H']);
+    T('12 · la chiave di configurazione cambia con codice, parametri e modello',h1!==h2&&h1!==h3&&h1===mh(b.codeHash,a.params,M['1H']));
+    const mem=(()=>{ const o={}; return {setItem:(k,v)=>{o[k]=v;},getItem:k=>(k in o?o[k]:null),key:i=>Object.keys(o)[i],get length(){return Object.keys(o).length;}}; })();
+    const bars=mk([...noise(25),...Array(30).fill(4)],H), e1=GC.Engine('1H',M,P); e1.pushSeries(bars,NOW); GC.Store.save(mem,GC.Store.key('QQQ','1H',h1),e1.state);
+    T('12 · stato di un\'altra configurazione non viene ripristinato',GC.Store.load(mem,GC.Store.key('QQQ','1H',h2))===null&&GC.Store.otherKeys(mem,'QQQ','1H',h2).length===1&&GC.Store.load(mem,GC.Store.key('QQQ','4H',h1))===null);
+    /* 13) ripristino dopo ricarica: identico alla corsa continua */
+    const all=mk([...noise(25),...Array(15).fill(4),...Array(15).fill(-3),...noise(20)],H), cont=GC.Engine('1H',M,P); cont.pushSeries(all,NOW);
+    const first=GC.Engine('1H',M,P); first.pushSeries(all.slice(0,37),NOW); GC.Store.save(mem,'k',first.state);
+    const rest=GC.Engine('1H',M,P,GC.Store.load(mem,'k')); rest.pushSeries(all,NOW);       /* la serie completa viene ri-presentata: le prime barre sono già elaborate */
+    T('13 · ripristino dallo storage + serie ripresentata = corsa continua (stato identico)',rest.serialize()===cont.serialize());
+    const q=GC.Store.save({setItem(){ throw new Error('quota'); }},'k',{}); T('13 · storage pieno/non disponibile: salvataggio fallito senza eccezioni',q===false&&GC.Store.load({getItem(){ throw 1; }},'k')===null); }
+  /* Adapter */
+  { const ltf=[]; const mkl=(t,o,c,v)=>ltf.push({t,o,c,v}); const t0=1700000000-1700000000%86400+14.5*H; /* 14:30 UTC */ 
+    [[100,101,10],[101,100.5,4],[100.5,100.5,3],[100.5,102,7]].forEach((x,i)=>mkl(t0+i*900,x[0],x[1],x[2]));      // 4 barre da 15 min = 1 ora
+    const out=GC.Adapter.approxDelta(ltf,H,900,{nowSec:t0+10*H}); const b=out[0];
+    T('adattatore: delta cumulato +10, −4, −3 (parità: eredita il segno precedente), +7 → last=10, max=10, min=0 (lo zero iniziale fa parte dell\'intervallo; regola dichiarata)',out.length===1&&b.l===10&&b.mx===10&&b.mn===0&&b.o===0&&b.closed===true&&out.ambig===1,JSON.stringify(b));
+    const l2=ltf.map(x=>Object.assign({},x)); l2[1].v=null; const o2=GC.Adapter.approxDelta(l2,H,900,{nowSec:t0+10*H}); { const l3=[{t:t0,o:100,c:99,v:5},{t:t0+900,o:99,c:98,v:3},{t:t0+1800,o:98,c:99,v:2},{t:t0+2700,o:99,c:99.5,v:2}]; const o=GC.Adapter.approxDelta(l3,H,900,{nowSec:t0+10*H})[0]; T('adattatore: delta con tratto negativo → min = −8, max = 0, last = −4',o.l===-4&&o.mn===-8&&o.mx===0); }
+    T('adattatore: volume mancante in una barra inferiore → barra non valida (null), mai 0',o2[0].l===null&&o2[0].mx===null);
+    const o3=GC.Adapter.approxDelta(ltf,H,900,{nowSec:t0+H/2}); T('adattatore: ultima barra con orario di fine non raggiunto → in formazione (closed=false)',o3[0].closed===false); }
+  /* 14) animazione */
+  { const tgt=.8; let a=.2, b=.2, c=.2; const tau=300; for(let i=0;i<60;i++) a=GC.RenderMath.smooth(a,tgt,1000/30,tau); for(let i=0;i<288;i++) b=GC.RenderMath.smooth(b,tgt,1000/144,tau); let tt=0; while(tt<2000){ const dt=Math.min(2000-tt,5+rnd()*70); c=GC.RenderMath.smooth(c,tgt,dt,tau); tt+=dt; }
+    T('14 · animazione: a 30 fps, 144 fps e con frame irregolari lo stato visualizzato coincide (composizione esatta)',near(a,b,1e-9)&&near(a,c,1e-9),a.toFixed(6));
+    const snap=Object.freeze({D:.5}); let thrown=false; try{ (function(){ 'use strict'; GC.RenderMath.smooth(snap.D,.9,16,300); GC.RenderMath.sepPx(snap.D,.15,1,60,300); })(); }catch(e){ thrown=true; } T('14 · il rendering legge soltanto: nessuna scrittura sul modello (snapshot congelato)',!thrown);
+    T('14 · la posizione a regime riflette D: sepPx proporzionale e vincolata ai limiti',near(GC.RenderMath.sepPx(.15,.15,1,60,300),60)&&near(GC.RenderMath.sepPx(1,.15,1,60,300),300)&&GC.RenderMath.sepPx(5,.15,1,60,300)===300); }
+  /* qualità */
+  { const e=eng('1H',mk(noise(10),H)); const q=e.quality(NOW); T('qualità: warm-up dichiarato (bande non definite), non zero',q.state==='warmup'&&q.why[0].includes('10/20')&&e.last()===null);
+    const e2=eng('1H',mk([...noise(25),...Array(5).fill(2)],H)); T('qualità: dati vecchi → «non aggiornata»',e2.quality(NOW).state==='non aggiornata'&&e2.quality(e2.state.lastT+2*H).state==='ok'); }
+
+  /* ===== 1.1 · A: fixture calcolate A MANO (non da una seconda implementazione) ===== */
+  { const run=(x,p)=>{ const ic=GC.IndCalc(p); return x.map(l=>ic.push({o:0,mx:Math.max(l,0),mn:Math.min(l,0),l})); }, P3={bbLength:3,bbMult:1,useWicks:false}, s2=Math.sqrt(2/3);
+    const a=run([1,2,3,4,5,6],P3), b=run([1,2,3,4,5,6],Object.assign({},P3,{seed:'first'}));
+    T('A · seed SMA, L=3, x=1..6: ema = 2, 3, 4, 5 dal 3° dato; stdev di popolazione = √(2/3); bande ema±std',!a[0].ready&&!a[1].ready&&[2,3,4,5].every((e,i)=>near(a[i+2].ema,e)&&near(a[i+2].std,s2)&&near(a[i+2].upper,e+s2)&&near(a[i+2].lower,e-s2)));
+    T('A · seed «primo valore», L=3: ema = 2.25, 3.125, 4.0625, 5.03125 (calcolati a mano con α=0.5)',[2.25,3.125,4.0625,5.03125].every((e,i)=>near(b[i+2].ema,e)));
+    const P4={bbLength:4,bbMult:1,useWicks:false}, c=run([2,4,6,8,10,12],P4), d=run([2,4,6,8,10,12],Object.assign({},P4,{seed:'first'}));
+    T('A · L=4 (α=0.4), x=2,4,…,12: SMA-seed 5, 7, 9 con stdev √5; primo-valore 5.648, 7.3888, 9.23328',[5,7,9].every((e,i)=>near(c[i+3].ema,e)&&near(c[i+3].std,Math.sqrt(5)))&&[5.648,7.3888,9.23328].every((e,i)=>near(d[i+3].ema,e,1e-9)));
+    const st=x=>run(x,P3)[3].state; T('A · stati a mano: [3,3,3,1] bull_weak · [3,3,3,−1] bear_strong · [3,3,3,0] bear_strong (last=0 → ramo ribassista) · [−3,−3,−3,−2] bear_weak',st([3,3,3,1])==='bull_weak'&&st([3,3,3,-1])==='bear_strong'&&st([3,3,3,0])==='bear_strong'&&st([-3,-3,-3,-2])==='bear_weak'&&st([3,3,3,2])==='bull_weak');
+    const w=run([5,6,7,8],{bbLength:3,bbMult:1,useWicks:true}); T('A · opzione wick: la sorgente delle bande è (max+min)/2',near(w[2].ema,(7/2+6/2+5/2)/3)&&true);
+    const Lg={bbLength:300,bbMult:1,useWicks:false}; const xs=Array.from({length:900},(_,i)=>Math.sin(i/9)*50+(i%11)), ra=run(xs,Lg), rb=run(xs,Object.assign({},Lg,{seed:'first'})); const al=2/301; let ok=Math.abs(ra[299].ema-rb[299].ema)>1e-6; for(let k=299;k<898;k++) ok=ok&&near(ra[k+1].ema-rb[k+1].ema,(1-al)*(ra[k].ema-rb[k].ema),1e-9);
+    T('A · le due varianti di seed differiscono all\'avvio (Δ='+(ra[299].ema-rb[299].ema).toFixed(3)+') e la differenza decade esattamente di (1−α) a barra: serve la stessa barra iniziale di TradingView',ok); }
+  /* ===== B/E: barriere ===== */
+  { const o=(md,pd,lim,dec)=>({movDir:md,pressDir:pd,lim:lim||0,decel:!!dec}), S=GC.Sync.classify;
+    const a=S(o(0,1,1),o(1,1,0)); T('E · 1H bloccata sul massimo + 4H in movimento: NON «entrambe rialziste»; lettura esplicita del blocco',a.code==='one_moving'&&/limite massimo/.test(a.text)&&/pressione rialzista/.test(a.text));
+    T('E · entrambe bloccate / una bloccata e l\'altra neutrale → «movimento bloccato su una barriera»',S(o(0,1,1),o(0,-1,-1)).code==='blocked'&&S(o(0,-1,-1),o(0,0,0)).code==='blocked');
+    const m=S(o(1,-1,0),o(1,1,0)); T('E · pressione opposta al movimento segnalata (inerzia), senza cambiare la concordanza di movimento',m.code==='both_up'&&m.mods.some(x=>x.includes('pressione opposta')));
+    const e1=eng('1H',mk(Array(140).fill(5),H)).last(), e4=eng('4H',mk(Array(140).fill(5),4*H)).last(); T('E · motore: dopo il blocco su Dmax la sintesi 1H/4H dice «ferme su un limite», non «rialziste»',e1.lim===1&&e4.lim===1&&S(e1,e4).code==='blocked'&&e1.movDir===0&&e1.pressDir===1);
+    const r=eng('1H',mk([...noise(25),...Array(40).fill(5),...Array(6).fill(-5)],H)), ob=okObs(r); const i=ob.findIndex(x=>x.lim===1); const after=ob.slice(i+1).find(x=>x.lim===0);
+    T('E · uscita dal limite: la pressione cambia segno e il movimento riprende gradualmente dall\'inerzia nulla (D scende solo dopo)',i>0&&after&&after.wall===1||after.pressDir===-1&&ob[ob.length-1].D<=ob[i].D,'lim→'+(after?after.lim:'-')); }
+  /* ===== C/D: sessioni, DST, allineamento, copertura ===== */
+  { const NY='America/New_York', Sx=GC.Sessions; const u=(y,m,d,h,mi)=>Date.UTC(y,m-1,d,h,mi)/1000;
+    const r1=Sx.nyseRegular(NY,u(2026,3,6,15,0)), r2=Sx.nyseRegular(NY,u(2026,3,9,15,0)), r3=Sx.nyseRegular(NY,u(2026,10,30,15,0)), r4=Sx.nyseRegular(NY,u(2026,11,2,16,0));
+    T('D · ora legale: sessione 9:30–16:00 NY = 14:30–21:00Z (6 mar, EST), 13:30–20:00Z (9 mar e 30 ott, EDT), di nuovo 14:30Z (2 nov)',r1[0]===u(2026,3,6,14,30)&&r1[1]===u(2026,3,6,21,0)&&r2[0]===u(2026,3,9,13,30)&&r2[1]===u(2026,3,9,20,0)&&r3[0]===u(2026,10,30,13,30)&&r4[0]===u(2026,11,2,14,30));
+    const day=(d0,skipFirst,withPre)=>{ const arr=[]; for(let k=0;k<26;k++){ if(skipFirst&&k===0) continue; const t=d0+k*900, up=(k%3)!==0; arr.push({t,o:100,c:up?101:99,v:10}); } if(withPre) arr.unshift({t:d0-1800,o:100,c:101,v:99}); return arr; };
+    const d0=r2[0]; const full=GC.Adapter.approxDelta(day(d0),3600,900,{tz:NY,nowSec:d0+86400}), f4=GC.Adapter.approxDelta(day(d0),14400,900,{tz:NY,nowSec:d0+86400});
+    T('C · giornata intera da 15 min: 7 barre 1H (ultima da 30 min) e 2 barre 4H (9:30–13:30 e 13:30–16:00), tutte valide e chiuse; allineamento dichiarato',full.length===7&&full.every(b=>b.l!==null&&b.closed)&&f4.length===2&&f4[0].t===d0&&f4[1].t===d0+14400&&f4.every(b=>b.l!==null)&&/regola NYSE/.test(full.align));
+    const hole=GC.Adapter.approxDelta(day(d0,true),3600,900,{tz:NY,nowSec:d0+86400}), nover=GC.Adapter.approxDelta(day(d0,true),3600,900,{nowSec:d0+86400}), h4=GC.Adapter.approxDelta(day(d0,true),14400,900,{tz:NY,nowSec:d0+86400});
+    T('C · prima barra del giorno mancante: con la sessione nota la 1H resta ancorata alle 9:30 e la barra incompleta è NON valida (3/4); senza sessione (primo-barra) l\'ancoraggio slitta di 15 min senza avvisi → allineamento dichiarato «NON verificato»',hole[0].t===d0&&hole[0].l===null&&hole[0].cov===.75&&nover[0].t===d0+900&&nover[0].l!==null&&/NON verificato/.test(nover.align));
+    T('C · tolleranza di copertura 90 %: 15 barre su 16 in una barra 4H restano valide ma la copertura (0.94) è riportata per essere mostrata all\'utente',h4[0].t===d0&&h4[0].l!==null&&Math.abs(h4[0].cov-15/16)<1e-12);
+    const pre=GC.Adapter.approxDelta(day(d0,false,true),3600,900,{tz:NY,nowSec:d0+86400}); T('C · barre pre-market escluse dal delta e contate',pre.outside===1&&pre[0].t===d0&&pre[0].l===full[0].l);
+    const meta={tradingPeriods:[[{start:d0,end:d0+3.5*3600}]]}, ms=Sx.fromMeta(meta), early=GC.Adapter.approxDelta(day(d0).slice(0,14),3600,900,{sessions:ms,nowSec:d0+86400});
+    T('C · sessione da metadati (chiusura anticipata 13:00): ultima barra da 30 min valida, allineamento «metadati»',ms.length===1&&early.length===4&&early[3].l!==null&&early.align==='metadati'&&Sx.fromMeta({tradingPeriods:{regular:[[{start:1,end:2}]]}}).length===1&&Sx.fromMeta({}).length===0);
+    const live=GC.Adapter.approxDelta(day(d0).slice(0,3),3600,900,{tz:NY,nowSec:d0+1800}); T('C · barra 1H ancora in corso → closed=false (provvisoria)',live.length===1&&live[0].closed===false); }
+  /* ===== F: classificazione degli aggiornamenti ===== */
+  { const bars=mk([...noise(25),...Array(30).fill(3)],H), e=GC.Engine('1H',M,P); const k0=e.compare(bars).kind; e.pushSeries(bars.slice(0,40),NOW);
+    const kInc=e.compare(bars).kind, same=e.compare(bars.slice(0,40)).kind, rev=bars.map(b=>Object.assign({},b)); rev[30].l=-9; rev[30].mn=-9;
+    T('F · classificazione: prima elaborazione · aggiornamento incrementale · nessuna novità',k0==='prima'&&kInc==='incrementale'&&same==='nessuna_novita');
+    const cr=e.compare(rev.slice(0,40)); T('F · correzione di barre già elaborate rilevata (1 barra diversa) e distinta dall\'aggiornamento',cr.kind==='correzione'&&cr.differ===1);
+    T('F · serie più vecchia dello stato → «piu_vecchi»; serie dopo un salto senza sovrapposizione → «senza_sovrapposizione»',e.compare(bars.slice(0,20)).kind==='piu_vecchi'&&e.compare(mk(Array(5).fill(1),H,bars[39].t+50*H)).kind==='senza_sovrapposizione');
+    const e2=GC.Engine('1H',M,P); e2.pushSeries(bars,NOW); const before=e2.serialize(); const fresh=GC.Engine('1H',M,P); fresh.pushSeries(rev,NOW);
+    T('F · ricalcolo integrale (stato nuovo sulla serie corretta) ≠ stato incrementale che ignora la correzione; ripetuto due volte dà lo stesso risultato',before!==fresh.serialize()&&(()=>{ const f2=GC.Engine('1H',M,P); f2.pushSeries(rev,NOW); return f2.serialize()===fresh.serialize(); })());
+    const md=GC.Store.metaDiff; T('F · causa del cambio di configurazione: codice / parametri / sorgente / modello distinti',md({codeHash:'a',params:{x:1},src:'import',model:'m'},{codeHash:'b',params:{x:1},src:'import',model:'m'}).join()==='codice dell\'indicatore'&&md({codeHash:'a',params:{x:1},src:'import',model:'m'},{codeHash:'a',params:{x:2},src:'approx:15m',model:'m'}).join().includes('parametri dell\'indicatore')&&md(null,{})===null); }
+  /* ===== A: strumento di equivalenza (verifica la procedura di confronto, NON la fedeltà a TradingView) ===== */
+  { const L=40, Pp={bbLength:L,bbMult:1,useWicks:false}, xs=Array.from({length:260},(_,i)=>Math.sin(i/7)*40+((i*37)%13)-6), mkRef=seed=>{ const ic=GC.IndCalc(Object.assign({},Pp,{seed})); return xs.map((l,i)=>{ const x=ic.push({o:0,mx:Math.max(l,0),mn:Math.min(l,0),l}); return {t:1.7e9+i*3600,o:0,mx:Math.max(l,0),mn:Math.min(l,0),l,ema:x.ready?+x.ema.toFixed(6):null,up:x.ready?+x.upper.toFixed(6):null,lo:x.ready?+x.lower.toFixed(6):null}; }); };
+    const rs=GC.Equiv.compare(mkRef('sma'),Pp), rf=GC.Equiv.compare(mkRef('first'),Pp);
+    T('A · strumento di equivalenza: riferimento con seed SMA → passa solo «sma»; con seed «primo valore» → passa solo «first» (la procedura distingue le due ipotesi)',rs.seeds.sma.pass&&!rs.seeds.first.pass&&rf.seeds.first.pass&&!rf.seeds.sma.pass&&rs.seeds.sma.stOk===rs.seeds.sma.stN,'sma: err '+rs.seeds.sma.maxRel.toExponential(1)+', first: '+rs.seeds.first.maxRel.toExponential(1));
+    const pz=GC.Series.parseText('Time,Open,High,Low,Close,Bollinger EMA,Upper Band,Lower Band\n1700000000,0,10,-5,3,2.5,4,1\n1700003600,0,4,-1,1,,,'); T('A · parsing dell\'export di riferimento: colonne ema/upper/lower riconosciute dai nomi dei grafici; vuoti → null',pz.rows[0].ema===2.5&&pz.rows[0].up===4&&pz.rows[1].ema===null);
+    T('A · file senza colonne di riferimento: errore esplicito, nessun verdetto',GC.Equiv.compare(GC.Series.parseText('time,open,max,min,last\n1,0,1,0,1').rows,Pp).error!==undefined); }
+  return R;
+} };
+if(typeof module!=='undefined') module.exports=GC.Tests;
+})(typeof GC!=='undefined'?GC:require('./core.js'));
+</script>
+<script>const DEFAULT_CODE="//@version=6\nindicator(\"Volume Delta with Bollinger Bands [EMA]\", format=format.volume, shorttitle=\"VolDeltaBB\")\n\nimport TradingView/ta/8\n\n// \u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\n// \u2023 Inputs\n// \u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\n\n// Timeframe inputs\nuseCustomTimeframeInput = input.bool(false, \"Use custom timeframe for volume delta\", \n     tooltip=\"By default, the timeframe is chosen automatically. When enabled, choose a custom lower timeframe to approximate up and down volume.\")\nlowerTimeframeInput     = input.timeframe(\"1\", \"Custom Lower Timeframe\")\n\nvar lowerTimeframe = if useCustomTimeframeInput\n    lowerTimeframeInput\nelse\n    if timeframe.isseconds\n        \"1S\"\n    else if timeframe.isintraday\n        \"1\"\n    else if timeframe.isdaily\n        \"5\"\n    else\n        \"60\"\n\n// Bollinger inputs\nbbLength   = input.int(300, \"Bollinger Length\", minval=1)\nbbMult     = input.float(1.0, \"Bollinger Multiplier\", minval=0.1)\n\n// Whether to use wicks in Bollinger calculations\nuseWicksForBB = input.bool(false, \"Use Wicks for Bollinger Calculation?\",\n     tooltip=\"If true, Bollinger calculations use the average of maxVolume and minVolume. Otherwise, uses lastVolume (the 'close').\")\n\n// \u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\n// \u2023 Request volume delta from lower timeframe\n// \u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\n[openVolume, maxVolume, minVolume, lastVolume] = ta.requestVolumeDelta(lowerTimeframe)\n\n// If volume data is not available, throw an error\nvar float cumVol = 0.\ncumVol += nz(volume)\nif barstate.islast and cumVol == 0\n    runtime.error(\"The data vendor doesn't provide volume data for this symbol.\")\n\n// \u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\n// \u2023 Determine source for Bollinger calculations\n// \u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\nvolumeForBB = useWicksForBB ? (maxVolume + minVolume) / 2 : lastVolume\n\n// \u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\n// \u2023 Calculate Bollinger Bands (EMA-based)\n// \u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\nemaValue   = ta.ema(volumeForBB, bbLength)\nstdDev     = ta.stdev(volumeForBB, bbLength)\nupperBand  = emaValue + bbMult * stdDev\nlowerBand  = emaValue - bbMult * stdDev\n\n// \u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\n// \u2023 Define function for bar color logic\n// \u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\nf_getBarColor(val, upBand, lowBand) =>\n    if val > 0\n        // Positive bar\n        if val >= upBand\n            color.new(color.teal, 0)    // darker green\n        else\n            color.new(color.teal, 60)   // lighter green\n    else\n        // Negative bar\n        if val <= lowBand\n            color.new(color.red, 0)     // darker red\n        else\n            color.new(color.red, 60)    // lighter red\n\n// Apply the function\nbarColor = f_getBarColor(lastVolume, upperBand, lowerBand)\n\n// \u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\n// \u2023 Plot Volume Delta as candles (with wicks)\n// \u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\nhline(0, 'Zero Line', color=color.new(color.gray, 70))\n\nplotcandle(\n     open = openVolume, \n     high = maxVolume, \n     low = minVolume, \n     close = lastVolume, \n     title = \"Volume Delta\",\n     color = barColor,\n     bordercolor = barColor,\n     wickcolor = barColor)\n\n// \u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\n// \u2023 Plot Bollinger Bands\n// \u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\nplot(emaValue,   color=color.yellow, linewidth=2, title=\"Bollinger EMA\", display=display.none)\nplot(upperBand,  color=color.orange, linewidth=1, title=\"Upper Band\")\nplot(lowerBand,  color=color.orange, linewidth=1, title=\"Lower Band\")\n\n// Fill between upper and lower bands\nfill(\n     plot(upperBand, display=display.none), \n     plot(lowerBand, display=display.none), \n     color=color.new(color.orange, 85), \n     title=\"BB Fill\",\n     display=display.none)";</script>
+<script>/* GALAXY CONFLUENCE — interfaccia: acquisizione dati, dashboard, rendering. Legge soltanto dal nucleo (GC); non modifica mai il modello. */
+(function(){
+'use strict';
+const $=id=>document.getElementById(id), fin=Number.isFinite, M=GC.defaultModel, TFS=['1H','4H'], STEP={'1H':3600,'4H':14400};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const LS=(()=>{ try{ localStorage.setItem('gc2|t','1'); localStorage.removeItem('gc2|t'); return localStorage; }catch(e){ const m={}; return {getItem:k=>(k in m?m[k]:null),setItem:(k,v)=>{m[k]=v;},removeItem:k=>{delete m[k];},key:i=>Object.keys(m)[i],get length(){return Object.keys(m).length;}}; } })();
+const f=(x,d)=>x==null||!fin(x)?'—':(+x).toFixed(d==null?3:d), fe=x=>x==null||!fin(x)?'—':(Math.abs(x)>=.01||x===0?(+x).toFixed(4):(+x).toExponential(2));
+const fv=x=>x==null||!fin(x)?'—':(+x).toLocaleString('it-IT',{maximumFractionDigits:2});
+const when=t=>t==null?'—':new Date(t*1000).toLocaleString('it-IT',{timeZone:$('tz').value||'Europe/Rome',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+const DEFAULT_WORKER='https://yahooproxy.b864v27974.workers.dev';
+const P=()=>Object.assign({},ui.a.params,{seed:$('seed').value||'sma'});
+const ui={fresh:{},wk:{},a:null,eng:{},key:{},snap:{},shown:{},data:{'1H':null,'4H':null},notes:[],dataRep:{},mode:'import',fetchNote:''};
+const saveUI=()=>{ try{ LS.setItem('gc2|ui',JSON.stringify({code:$('code').value,sym:$('sym').value,mode:ui.mode,t1:$('t1H').value.slice(0,400000),t4:$('t4H').value.slice(0,400000),wk:$('wk').value,ltf:$('ltf').value,ltf4:$('ltf4').value,tz:$('tz').value,seed:$('seed').value})); }catch(e){} };
+const loadUI=()=>{ try{ return JSON.parse(LS.getItem('gc2|ui')); }catch(e){ return null; } };
+
+/* ---------- analisi del codice ---------- */
+function analyzeCode(){
+  const a=GC.IndSrc.analyze($('code').value); ui.a=a; const el=$('ana');
+  if(!a.ok){ el.innerHTML='<div class="bad"><b>Adattatore non disponibile.</b> Il codice non corrisponde a una struttura che so riprodurre fedelmente; non simulo risultati.<ul>'+a.reasons.map(r=>'<li>'+esc(r)+'</li>').join('')+'</ul></div>'; return a; }
+  const p=a.params;
+  el.innerHTML=`<div class="ok"><b>Struttura riconosciuta (sintassi)</b> (Pine v${a.version||'?'}, impronta ${a.codeHash.slice(0,8)}). Parametri letti dal codice: lunghezza ${p.bbLength}, moltiplicatore ${p.bbMult}, wick ${p.useWicks?'sì':'no'}, timeframe inferiore ${p.useCustomTF?p.customTF:p.autoLTF} min.</div>
+  <details><summary>Valori prodotti e stati</summary><table><tr><th>Valore</th><th>Natura</th></tr>${a.outputs.map(o=>`<tr><td>${esc(o[0])}</td><td>${esc(o[1])}</td></tr>`).join('')}</table>
+  <table><tr><th>Stato</th><th>Condizione</th></tr>${a.states.map(o=>`<tr><td>${esc(o[0])}</td><td>${esc(o[1])}</td></tr>`).join('')}</table><ul>${a.notes.map(n=>'<li>'+esc(n)+'</li>').join('')}</ul></details>`;
+  eqBadge(); return a;
+}
+
+/* ---------- equivalenza matematica con TradingView ---------- */
+const eqKey=()=>'gc2|eq|'+ui.a.codeHash+'|'+GC.hash(JSON.stringify([ui.a.params.bbLength,ui.a.params.bbMult,ui.a.params.useWicks]));
+function eqBadge(){
+  const el=$('eqbadge'); if(!ui.a||!ui.a.ok){ el.innerHTML=''; return; }
+  let rec=null; try{ rec=JSON.parse(LS.getItem(eqKey())); }catch(e){} const seed=$('seed').value, r=rec&&rec.seeds&&rec.seeds[seed];
+  if(r&&r.pass) el.innerHTML=`<div class="ok">✔ <b>Equivalenza matematica verificata</b> con un export di TradingView: seed «${esc(seed)}», ${r.n} confronti su ${rec.bars} barre, errore relativo massimo ${r.maxRel.toExponential(1)} (${esc(rec.date)}).</div>`;
+  else if(rec&&r){ const other=Object.keys(rec.seeds).find(k=>k!==seed&&rec.seeds[k].pass); el.innerHTML=`<div class="bad">✘ Il seed selezionato («${esc(seed)}») <b>non coincide</b> con l'export di TradingView (errore relativo max ${r.maxRel.toExponential(1)}).${other?` Coincide invece il seed «${esc(other)}»: selezionalo.`:' Nessuna delle due ipotesi di seed coincide: controlla che l\'export parta dalla stessa prima barra del calcolo di TradingView.'}</div>`; }
+  else el.innerHTML='<div class="warn"><b>Equivalenza matematica NON verificata.</b> Il codice è riconosciuto sintatticamente, ma il calcolo di EMA e bande non è mai stato confrontato con TradingView: finché non lo fai (sezione «Verifica di equivalenza») le forze E e G non vanno considerate quelle dell\'indicatore originale.</div>';
+}
+function runEquiv(){
+  const el=$('eqres'); if(!ui.a||!ui.a.ok){ el.textContent='Codice non riconosciuto.'; return; }
+  const p=GC.Series.parseText($('ref').value); if(p.errors.length){ el.innerHTML='<div class="bad">'+esc(p.errors.join('; '))+'</div>'; return; }
+  const r=GC.Equiv.compare(p.rows,ui.a.params); if(r.error){ el.innerHTML='<div class="bad">'+esc(r.error)+'</div>'; return; }
+  const rec={bars:r.bars,date:new Date().toLocaleString('it-IT'),seeds:{}}; for(const k in r.seeds){ const s=r.seeds[k]; rec.seeds[k]={pass:s.pass,n:s.n,maxRel:s.maxRel}; }
+  try{ LS.setItem(eqKey(),JSON.stringify(rec)); }catch(e){}
+  el.innerHTML=`<p class="m">${r.bars} barre, bande disponibili dalla barra ${r.L}. Tolleranza: errore relativo ≤ 1e-4 (rispetto a max(|riferimento|,1)) — scelta mia, modificabile nel codice. L'EMA ha memoria lunga: l'export deve partire dalla stessa prima barra usata da TradingView, altrimenti le prime barre divergono per costruzione.</p><table><tr><th>Seed EMA</th><th>confronti</th><th>errore rel. max</th><th>dopo 2L barre</th><th>stati uguali</th><th>esito</th></tr>`+Object.entries(r.seeds).map(([k,s])=>`<tr><td>${k==='sma'?'media semplice delle prime L (sma)':'primo valore (first)'}</td><td>${s.n}</td><td>${s.maxRel.toExponential(2)}</td><td>${s.nLate?s.maxRelLate.toExponential(2):'—'}</td><td>${s.stN?s.stOk+'/'+s.stN:'—'}</td><td>${s.pass?'<b class="g">coincide</b>':'<b class="r">non coincide</b>'}</td></tr>`).join('')+'</table>';
+  eqBadge();
+}
+
+/* ---------- motori ---------- */
+function getEngine(tf){
+  const a=ui.a, sym=($('sym').value||'SYM').trim().toUpperCase(), extra=ui.mode==='import'?'import':'approx:'+ltfFor(tf), mt=Object.assign({},M.common,M[tf]);
+  const h=GC.Store.cfgHash(a.codeHash,P(),mt,extra), key=GC.Store.key(sym,tf,h), meta={codeHash:a.codeHash,params:P(),src:extra,model:JSON.stringify(mt)};
+  if(ui.key[tf]!==key){
+    const force=ui.fresh[tf]; ui.fresh[tf]=false;
+    const saved=force?null:GC.Store.load(LS,key), others=GC.Store.otherKeys(LS,sym,tf,h);
+    ui.eng[tf]=GC.Engine(tf,M,P(),saved); ui.key[tf]=key; ui.shown[tf]=null; ui.notes=ui.notes.filter(n=>n.tf!==tf);
+    if(force) ui.notes.push({tf,t:`${tf}: ricalcolo integrale dai dati caricati (stato precedente scartato).`});
+    else if(saved) ui.notes.push({tf,t:`${tf}: stato ripristinato dalla memoria locale (${saved.q.nObs} osservazioni).`});
+    else if(others.length){ let best=null; for(const k of others){ const s=GC.Store.load(LS,k); if(s&&s.meta&&(!best||(s.saved||0)>(best.saved||0))) best=s; } const d=best?GC.Store.metaDiff(best.meta,meta):null;
+      ui.notes.push({tf,t:`${tf}: ${d&&d.length?'cambiati: '+d.join(', '):'configurazione cambiata'} rispetto allo stato salvato → la dinamica riparte da zero (stato precedente non riutilizzato).`}); }
+  }
+  const e=ui.eng[tf]; if(!e.state.meta) e.state.meta=meta; return e;
+}
+function feed(){
+  if(!ui.a||!ui.a.ok){ ui.snap={}; dash(); return; }
+  const now=Date.now()/1000;
+  for(const tf of TFS){
+    const e=getEngine(tf), d=ui.data[tf]; if(!d){ ui.snap[tf]={o:e.last(),q:e.quality(now),prov:null,eng:e}; continue; }
+    const cmp=e.compare(d.bars); ui.notes=ui.notes.filter(n=>n.tf!==tf+'upd');
+    const um={correzione:`⚠ CORREZIONE STORICA: ${cmp.differ} barre già elaborate hanno valori diversi nei dati forniti. Il modello non le riscrive: usa «Ricalcola ${tf}» per rielaborare l'intera serie.`,piu_vecchi:`i dati forniti terminano prima dell'ultima barra già elaborata (${when(e.state.lastT)}): sostituzione con uno storico diverso o più vecchio? Vengono ignorati e lo stato non torna indietro. Per rielaborare dall'inizio usa «Ricalcola ${tf}».`,senza_sovrapposizione:`la serie fornita non si sovrappone alle barre già elaborate (inizia dopo ${when(e.state.lastT)}): eventuali barre intermedie mancano; un buco oltre ${M.common.maxGapH} h riavvia la dinamica.`};
+    if(um[cmp.kind]) ui.notes.push({tf:tf+'upd',t:`${tf}: ${um[cmp.kind]}`});
+    ui.upd=ui.upd||{}; ui.upd[tf]=cmp;
+    const t0=e.state.lastT, forming=e.pushSeries(d.bars,now);
+    if(e.state.lastT!==t0||!e.state.saved) e.state.saved=Date.now();
+    let prov=null; if(forming&&forming.valid) prov=e.peek(forming);
+    GC.Store.save(LS,ui.key[tf],e.state); pruneStore();
+    ui.snap[tf]={o:e.last(),q:e.quality(now),prov,forming,eng:e};
+  }
+  dash();
+}
+function recalc(tf){ if(!ui.a||!ui.a.ok) return; try{ if(ui.key[tf]) LS.removeItem(ui.key[tf]); }catch(e){} ui.fresh[tf]=true; ui.key[tf]=null; feed(); }
+function pruneStore(){ try{ const ks=[]; for(let i=0;i<LS.length;i++){ const k=LS.key(i); if(k&&k.indexOf('gc2|')===0&&k!=='gc2|ui') ks.push(k); } if(ks.length>24){ ks.filter(k=>!Object.values(ui.key).includes(k)).slice(0,ks.length-24).forEach(k=>LS.removeItem(k)); } }catch(e){} }
+
+/* ---------- acquisizione: import ---------- */
+function loadImport(){
+  ui.dataRep={}; ui.wk={}; ui.notes=ui.notes.filter(n=>!n.imp);
+  for(const tf of TFS){
+    const txt=$('t'+tf).value.trim(); if(!txt){ ui.data[tf]=null; continue; }
+    const p=GC.Series.parseText(txt); if(p.errors.length){ ui.data[tf]=null; ui.notes.push({imp:1,t:`${tf}: ${p.errors.join('; ')}`}); continue; }
+    const n=GC.Series.normalize(p.rows,STEP[tf],{maxGapSec:M.common.maxGapH*3600}); ui.data[tf]=n; ui.dataRep[tf]=n.report;
+  }
+  saveUI(); feed();
+}
+/* ---------- acquisizione: Worker (delta approssimato da barre inferiori) ---------- */
+const LTFS={'1m':60,'5m':300,'15m':900,'60m':3600}, RANGE={'1m':'7d','5m':'60d','15m':'60d','60m':'1y'};
+const ltfFor=tf=>tf==='1H'?$('ltf').value:$('ltf4').value;
+async function fetchLTF(base,sym,iv,signal){
+  const r=await fetch(base+(base.includes('?')?'&':'?')+`symbol=${encodeURIComponent(sym)}&interval=${iv}&range=${RANGE[iv]}`,{signal}); if(!r.ok) throw new Error('HTTP '+r.status+' ('+iv+')');
+  const j=await r.json(), res=j.chart&&j.chart.result&&j.chart.result[0]; if(!res) throw new Error('risposta senza dati ('+iv+')');
+  if(res.meta&&res.meta.symbol&&res.meta.symbol.toUpperCase()!==sym) throw new Error('simbolo '+res.meta.symbol+' invece di '+sym);
+  const q=res.indicators&&res.indicators.quote&&res.indicators.quote[0], ts=res.timestamp; if(!q||!ts) throw new Error('risposta priva di barre ('+iv+')');
+  return {ltf:ts.map((t,i)=>({t,o:q.open[i],c:q.close[i],v:q.volume[i]})),meta:res.meta||{}};
+}
+async function loadWorker(){
+  const base=$('wk').value.trim(), sym=$('sym').value.trim().toUpperCase();
+  if(!/^https:\/\//.test(base)){ ui.fetchNote='Inserisci l\'URL https del tuo Worker.'; dash(); return; }
+  ui.fetchNote='Caricamento…'; dash(); const ac=new AbortController(), to=setTimeout(()=>ac.abort(),15000);
+  try{
+    const ivs=[...new Set(TFS.map(ltfFor))], got={}; for(const iv of ivs) got[iv]=await fetchLTF(base,sym,iv,ac.signal);
+    const now=Date.now()/1000; ui.notes=ui.notes.filter(n=>!n.imp); ui.dataRep={};
+    for(const tf of TFS){
+      const iv=ltfFor(tf), {ltf,meta}=got[iv], cp=meta.currentTradingPeriod&&meta.currentTradingPeriod.regular;
+      const raw=GC.Adapter.approxDelta(ltf,STEP[tf],LTFS[iv],{tzOffsetSec:meta.gmtoffset||0,tz:meta.exchangeTimezoneName||null,sessions:GC.Sessions.fromMeta(meta),nowSec:now,sessEnd:cp&&fin(cp.end)?cp.end:null});
+      ui.wk[tf]={align:raw.align,outside:raw.outside,nSess:raw.nSess,lowCov:raw.filter(b=>b.l!==null&&b.cov<1).length,dropped:raw.filter(b=>b.l===null).length,iv,days:RANGE[iv],nLtf:ltf.length};
+      const n=GC.Series.normalize(raw,STEP[tf],{maxGapSec:M.common.maxGapH*3600}); ui.data[tf]=n; ui.dataRep[tf]=n.report;
+    }
+    ui.fetchNote=`Caricate: ${TFS.map(tf=>tf+' da barre '+ltfFor(tf)+' ('+ui.wk[tf].nLtf+')').join(' · ')}. Delta APPROSSIMATO (segno di close−open di ogni barra inferiore). Aggiornato alle ${new Date().toLocaleTimeString('it-IT')}.`;
+    saveUI(); feed();
+  }catch(e){ ui.fetchNote='Errore di caricamento: '+(e.name==='AbortError'?'timeout':e.message)+'. Lo stato precedente è conservato ma non viene aggiornato.'; dash(); }
+  finally{ clearTimeout(to); }
+}
+
+/* ---------- testo di lettura ---------- */
+function readTf(tf,s){
+  const o=s.o, e=s.eng, q=s.q; if(!o) return q.state==='warmup'?`${tf}: ${q.why[0]}. Finché le bande non sono definite non esiste una dinamica attendibile.`:`${tf}: nessuna osservazione valida.`;
+  const side=l=>l>0?'massimo':'minimo', pr=o.pressDir>0?'rialzista':o.pressDir<0?'ribassista':'equilibrata';
+  const mov=o.lim?`sono ferme sul limite fisico ${side(o.lim)} di distanza: il movimento effettivo è nullo, mentre la pressione resta ${o.lim>0?'rialzista':'ribassista'} (le forze spingono ${o.lim>0?'verso l\'esterno':'verso l\'interno'} ma il limite le arresta)`
+    :o.movDir>0?'si stanno allontanando':o.movDir<0?'si stanno avvicinando':'sono sostanzialmente ferme (velocità sotto la soglia di neutralità ±'+fe(e.epsV)+'/h)';
+  const ratio=o.dsdt>0?Math.abs(o.v)/o.dsdt:null;
+  const rel=(o.movDir===0||o.lim)?'':(o.movDir>0&&o.faster?` Il movimento effettivo è circa ${f(ratio,1)}× più rapido dell'espansione strutturale.`:o.movDir<0?` La contrazione avviene mentre la traiettoria strutturale continua ad espandersi (${fe(o.dsdt)}/h): è un movimento relativo, non una contrazione della struttura.`:` Il movimento effettivo è più lento dell'espansione strutturale.`);
+  const dev=o.dev>=0?`sopra la traiettoria strutturale di ${f(o.dev)}`:`sotto la traiettoria strutturale di ${f(-o.dev)}`;
+  const frc=`Forze: energia oscura E=${f(o.E,2)}, gravità G=${f(o.G,2)} → risultante ${o.R>=0?'+':''}${f(o.R,2)}, pressione ${pr} (stato indicatore: ${o.state.replace('_',' ')}).`;
+  const opp=(!o.lim&&o.movDir!==0&&o.pressDir!==0&&o.movDir!==o.pressDir)?' La pressione è opposta al movimento: il moto prosegue per inerzia e sta per rallentare.':'';
+  const acc=o.lim?'':o.decel?' Il moto sta rallentando (accelerazione opposta alla velocità).':(o.movDir!==0?' Il moto sta accelerando o mantenendo la velocità.':'');
+  const st=q.state==='ok'?'':` ⚠ Dinamica ${q.state}: ${q.why.join('; ')}.`;
+  return `${tf}: le galassie ${mov}.${rel} La distanza effettiva (${f(o.D)}) è ${dev}. ${frc}${opp}${acc}${st}`;
+}
+function synth(){
+  const s1=ui.snap['1H'], s4=ui.snap['4H']; if(!s1||!s4) return null;
+  const ok=s=>s&&s.o&&s.q.state==='ok'; const c=GC.Sync.classify(ok(s1)?s1.o:null,ok(s4)?s4.o:null);
+  return c;
+}
+
+/* ---------- dashboard ---------- */
+function mkCards(){
+  $('cards').innerHTML=TFS.map(tf=>`<section class="card" id="c${tf}"><header><h3>${tf} <small>${tf==='4H'?'contesto strutturale (più lento)':'movimento rapido'}</small></h3><span class="chip" id="st${tf}">—</span></header>
+  <canvas id="cv${tf}" width="720" height="240" role="img" aria-label="Galassie ${tf}"></canvas>
+  <div class="kv" id="kv${tf}"></div><canvas id="hc${tf}" width="720" height="110" role="img" aria-label="Storico distanza ${tf}"></canvas>
+  <p class="read" id="rd${tf}"></p><p class="prov" id="pv${tf}"></p></section>`).join('');
+}
+function kv(tf,s){
+  const o=s&&s.o, e=s&&s.eng, mv=o&&(o.lim?'ferma (vincolata)':o.movDir>0?'allontanamento':o.movDir<0?'avvicinamento':'neutrale'), pr=o&&(o.pressDir>0?'rialzista':o.pressDir<0?'ribassista':'equilibrata'), ct=o&&(o.lim?`bloccata sul limite ${o.lim>0?'massimo':'minimo'}`:o.wall?`a contatto col limite ${o.wall>0?'massimo':'minimo'}`:'nessuno');
+  const r=[['Distanza effettiva D',o&&f(o.D)],['Distanza strutturale Ds',o&&f(o.Ds)],['Deviazione D−Ds',o&&((o.dev>=0?'+':'')+f(o.dev))],['Velocità effettiva (/h)',o&&fe(o.v)],['Espansione strutt. (/h)',o&&fe(o.dsdt)],['Accelerazione (/h²)',o&&fe(o.a)],['E (energia oscura)',o&&f(o.E,2)],['G (gravità)',o&&f(o.G,2)],['Risultante R=E−G',o&&((o.R>=0?'+':'')+f(o.R,2))],['Movimento effettivo',mv],['Pressione (segno di R)',pr],['Contatto con la barriera',ct],['Stato indicatore',o&&o.state.replace('_',' ')],['Delta last (barra)',o&&fv(o.l)],['Bande (inf / sup)',o&&(fv(o.lower)+' / '+fv(o.upper))],['Ultima barra chiusa',s&&e.state.lastT!=null?when(e.state.lastT):'—'],['Età del dato',s&&s.q.ageH!=null?s.q.ageH.toFixed(1)+' h':'—'],['Osservazioni valide',s&&e.state.q.nObs]];
+  $('kv'+tf).innerHTML=r.map(x=>`<div><span>${x[0]}</span><b>${x[1]==null?'—':x[1]}</b></div>`).join('');
+}
+function covPanel(){
+  const A=ui.a, L=A&&A.ok?A.params.bbLength:null; let h='<table><tr><th>TF</th><th>barre valide / totali</th><th>periodo coperto</th><th>necessarie (L)</th><th>esito</th><th>dettagli</th></tr>';
+  for(const tf of TFS){ const d=ui.data[tf]; if(!d){ h+=`<tr><td>${tf}</td><td colspan="5">nessun dato caricato</td></tr>`; continue; }
+    const v=d.bars.filter(b=>b.valid).length, tot=d.bars.length, f0=d.bars.length?d.bars[0].t:null, l0=d.bars.length?d.bars[d.bars.length-1].t:null, ok=v>=L, w=ui.wk[tf];
+    const det=[]; if(ui.mode==='worker'&&w){ det.push('allineamento: '+w.align); if(w.outside) det.push(w.outside+' barre fuori sessione escluse'); if(w.lowCov) det.push(w.lowCov+' barre ricostruite con copertura &lt;100% (tolleranza 90%)'); if(w.dropped) det.push(w.dropped+' barre scartate per copertura/volumi mancanti'); }
+    if(ui.mode==='worker'&&!ok){ const st=ui.eng[tf]&&ui.eng[tf].state, n=st?st.q.warm:0; det.push(`le barre elaborate si accumulano nello stato salvato: con l'app usata con regolarità la dinamica parte quando ne sono state elaborate ${L} (ora ${n}); mancano ${Math.max(0,L-n)} barre chiuse di ${tf}`+(tf==='4H'&&w&&w.iv!=='60m'?'. Con barre inferiori da '+w.iv+' lo storico del provider è troppo corto: considera «60 min» per la 4H':'')); }
+    const u=ui.upd&&ui.upd[tf]; if(u&&u.kind==='incrementale') det.push('aggiornamento incrementale: '+u.fresh+' barre nuove');
+    h+=`<tr><td>${tf}</td><td>${v} / ${tot}</td><td>${f0?when(f0)+' → '+when(l0):'—'}</td><td>${L}</td><td class="${ok?'g':'r'}">${ok?'sufficiente':'INSUFFICIENTE: mancano '+(L-v)+' barre — dinamica non avviata'}</td><td>${det.join('; ')}</td></tr>`; }
+  $('cov').innerHTML=h+'</table>'+(ui.mode==='worker'?'<p class="m">Modalità sperimentale: i dati gratuiti coprono pochi giorni, per cui le 300 barre (soprattutto in 4H) possono non bastare. La lunghezza Bollinger non viene mai ridotta per compensare.</p>':'');
+}
+function dash(){
+  const A=ui.a; $('st').textContent=ui.fetchNote||''; covPanel(); eqBadge(); 
+  const nt=ui.notes.map(n=>n.t); 
+  if(!A||!A.ok){ $('syn').innerHTML='<b>Nessuna lettura:</b> indicatore non riconosciuto.'; $('notes').innerHTML=''; return; }
+  for(const tf of TFS){
+    const s=ui.snap[tf]; if(!s){ continue; } kv(tf,s);
+    const q=s.q, chip=$('st'+tf); chip.textContent=q.state==='ok'?'dinamica aggiornata':q.state==='warmup'?'riscaldamento':'non aggiornata'; chip.className='chip '+(q.state==='ok'?'g':q.state==='warmup'?'y':'r');
+    $('c'+tf).classList.toggle('dim',q.state!=='ok');
+    $('rd'+tf).textContent=readTf(tf,s);
+    const pv=s.prov; $('pv'+tf).textContent=pv&&pv.status==='ok'?`Barra in formazione (provvisoria, NON nel modello): stato ${pv.state.replace('_',' ')}, E=${f(pv.E,2)} G=${f(pv.G,2)}; se si chiudesse così D sarebbe ${f(pv.D)}.`:(s.forming?'Barra in formazione presente ma senza dati validi.':'');
+    const rp=ui.dataRep[tf]; if(rp){ const bits=[]; if(rp.dup) bits.push(rp.dup+' duplicate'); if(rp.unsorted) bits.push('ordine corretto'); if(rp.missing) bits.push(rp.missing+' barre senza valori'); if(rp.incoherent) bits.push(rp.incoherent+' incoerenti'); if(rp.gaps.length) bits.push(rp.gaps.length+' buchi anomali'); if(rp.badTs) bits.push(rp.badTs+' timestamp non validi'); if(bits.length) nt.push(`${tf} dati: ${bits.join(', ')} (barre senza valori non diventano zero).`); }
+    if(q.disc.length) nt.push(`${tf}: ${q.disc.length} discontinuità (buco > ${M.common.maxGapH} h): la dinamica è ripartita dopo il buco.`);
+    if(q.q.scaleNull) nt.push(`${tf}: ${q.q.scaleNull} barre con scala delle bande nulla: forze non definite, dinamica non aggiornata in quelle barre.`);
+    if(q.q.revised) nt.push(`${tf}: ${q.q.revised} revisioni di barre già elaborate ignorate (lo stato definitivo non viene riscritto).`);
+    drawHist(tf,s);
+  }
+  const c=synth();
+  if(c){ const s1=ui.snap['1H'].o, s4=ui.snap['4H'].o; const row=(tf,o)=>o?`<tr><td>${tf}</td><td>${fe(o.v)}</td><td>${fe(o.dsdt)}</td><td>${(o.dev>=0?'+':'')+f(o.dev)}</td><td>${o.lim?(o.lim>0?'⇥ bloccata al limite massimo (pressione rialzista)':'⇤ bloccata al limite minimo (pressione ribassista)'):o.movDir>0?'↗ allontanamento':o.movDir<0?'↘ avvicinamento':'· ferma'}${o.decel?' (rallenta)':''}</td></tr>`:`<tr><td>${tf}</td><td colspan="4">—</td></tr>`;
+    $('syn').innerHTML=`<div class="big">${esc(c.label)}</div><p>${esc(c.text)}${c.mods&&c.mods.length?' <i>('+esc(c.mods.join('; '))+')</i>':''}</p><table><tr><th>TF</th><th>v (/h)</th><th>espansione strutt. (/h)</th><th>D−Ds</th><th>movimento</th></tr>${row('1H',s1)}${row('4H',s4)}</table><p class="m">Velocità normalizzate per ora: la 1H e la 4H non vengono mai confrontate su unità di barra. Lettura descrittiva: non è un segnale operativo.</p>`; }
+  $('notes').innerHTML=nt.length?'<ul>'+nt.map(n=>'<li>'+esc(n)+'</li>').join('')+'</ul>':'<span class="m">Nessuna anomalia segnalata.</span>';
+}
+
+/* ---------- rendering (sola lettura del modello) ---------- */
+const GAL=(()=>{ let s=7; const r=()=>(s=(s*16807)%2147483647)/2147483647, pts=[]; for(let i=0;i<260;i++){ const arm=i%2, u=Math.pow(r(),.7), th=u*5.2+arm*Math.PI+(r()-.5)*.35, rad=u*(1+.08*(r()-.5)); pts.push([th,rad,.6+r()*1.6,.35+r()*.65]); } return pts; })();
+function galaxy(ctx,x,y,R,rot,col){
+  const g=ctx.createRadialGradient(x,y,0,x,y,R*1.15); g.addColorStop(0,'rgba(255,244,214,.95)'); g.addColorStop(.18,'rgba(255,214,150,.55)'); g.addColorStop(1,'rgba(120,140,255,0)'); ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,y,R*1.15,0,7); ctx.fill();
+  for(const p of GAL){ const a=p[0]+rot, px=x+Math.cos(a)*p[1]*R, py=y+Math.sin(a)*p[1]*R*.55; ctx.fillStyle=`rgba(${col},${p[3]})`; ctx.beginPath(); ctx.arc(px,py,p[2],0,7); ctx.fill(); }
+}
+function arrow(ctx,x1,y,x2,col,w){ ctx.strokeStyle=col; ctx.fillStyle=col; ctx.lineWidth=w; ctx.beginPath(); ctx.moveTo(x1,y); ctx.lineTo(x2,y); ctx.stroke(); const d=Math.sign(x2-x1)||1; ctx.beginPath(); ctx.moveTo(x2,y); ctx.lineTo(x2-d*8,y-5); ctx.lineTo(x2-d*8,y+5); ctx.fill(); }
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim(), SK={'--tx':'#dfe6ff','--a':'#5cc8ff','--g':'#35d29a','--r':'#ff6b6b','--y':'#f2c14e','--sky':'#070a18'}, sk=n=>SK[n];
+function scene(tf,dt,time){
+  const cv=$('cv'+tf), ctx=cv.getContext('2d'), W=cv.width, H=cv.height, s=ui.snap[tf], o=s&&s.o, cfg=GC.defaultModel.common, cx=W/2, cy=H/2+4, R=44, minS=2*R+30, maxS=W-2*R-70;
+  ctx.clearRect(0,0,W,H); ctx.fillStyle=sk('--sky'); ctx.fillRect(0,0,W,H);
+  const sh=ui.shown[tf]||(ui.shown[tf]={D:null,Ds:null}); const tD=o?o.D:cfg.D0, tS=o?o.Ds:cfg.D0;
+  sh.D=GC.RenderMath.smooth(sh.D==null?tD:sh.D,tD,dt,350); sh.Ds=GC.RenderMath.smooth(sh.Ds==null?tS:sh.Ds,tS,dt,350);
+  const sep=GC.RenderMath.sepPx(sh.D,cfg.Dmin,cfg.Dmax,minS,maxS), sepS=GC.RenderMath.sepPx(sh.Ds,cfg.Dmin,cfg.Dmax,minS,maxS), dim=!o||s.q.state!=='ok';
+  ctx.globalAlpha=dim?.45:1; const rot=time*.00018; galaxy(ctx,cx-sep/2,cy,R,rot,'170,200,255'); galaxy(ctx,cx+sep/2,cy,R,rot,'170,200,255'); ctx.globalAlpha=1;
+  if(o){ ctx.strokeStyle=sk('--a'); ctx.setLineDash([4,4]); ctx.lineWidth=1.2; for(const sg of [-1,1]){ ctx.beginPath(); ctx.moveTo(cx+sg*sepS/2,cy-R-16); ctx.lineTo(cx+sg*sepS/2,cy+R+16); ctx.stroke(); } ctx.setLineDash([]); ctx.fillStyle=sk('--a'); ctx.font='11px system-ui'; ctx.textAlign='center'; ctx.fillText('distanza strutturale',cx+sepS/2,cy-R-20);
+    const bw=70, by=H-34; ctx.textAlign='left'; ctx.font='11px system-ui'; ctx.fillStyle=sk('--g'); ctx.fillRect(34,by-9,Math.min(o.E,2)/2*bw,7); ctx.fillText('E '+f(o.E,2),34+bw+8,by-2); ctx.fillStyle=sk('--r'); ctx.fillRect(34,by+3,Math.min(o.G,2)/2*bw,7); ctx.fillText('G '+f(o.G,2),34+bw+8,by+10); ctx.fillStyle='#9aa3c0';
+    const vx=Math.max(-1,Math.min(1,o.v/(s.eng.cfg.kF*s.eng.cfg.tauV)))*46; ctx.fillStyle=sk('--tx'); ctx.textAlign='center'; ctx.font='12px system-ui';
+    if(Math.abs(vx)>2) arrow(ctx,cx,cy+R+22,cx+vx,sk('--tx'),2); ctx.fillText('D '+f(o.D)+'  ·  v '+fe(o.v)+'/h'+(o.lim?'  ·  al limite fisico':''),cx,H-10); }
+  if(dim){ ctx.fillStyle=sk('--y'); ctx.font='bold 14px system-ui'; ctx.textAlign='center'; ctx.fillText(!s?'in attesa di dati':s.q.state==='warmup'?'RISCALDAMENTO — dinamica non disponibile':'DINAMICA NON AGGIORNATA',cx,24); }
+}
+function drawHist(tf,s){
+  const cv=$('hc'+tf), ctx=cv.getContext('2d'), W=cv.width, H=cv.height; ctx.clearRect(0,0,W,H); ctx.fillStyle=css('--card2'); ctx.fillRect(0,0,W,H);
+  const ob=s.eng.state.obs.filter(o=>o.status==='ok').slice(-160); if(ob.length<2){ ctx.fillStyle=css('--mu'); ctx.font='12px system-ui'; ctx.fillText('storico non ancora disponibile',12,24); return; }
+  const c=GC.defaultModel.common, y=v=>H-8-(v-c.Dmin)/(c.Dmax-c.Dmin)*(H-16), x=i=>8+i*(W-16)/(ob.length-1);
+  const line=(k,col,w)=>{ ctx.strokeStyle=col; ctx.lineWidth=w; ctx.beginPath(); ob.forEach((o,i)=>{ i?ctx.lineTo(x(i),y(o[k])):ctx.moveTo(x(i),y(o[k])); }); ctx.stroke(); };
+  line('Ds',css('--a'),1.5); line('D',css('--tx'),2); ctx.fillStyle=css('--mu'); ctx.font='11px system-ui'; ctx.fillText('D (pieno) · Ds (azzurro) — ultime '+ob.length+' osservazioni',10,14);
+}
+let last=performance.now();
+function loop(now){ const dt=Math.min(250,now-last); last=now; for(const tf of TFS) scene(tf,dt,now); requestAnimationFrame(loop); }
+
+/* ---------- avvio ---------- */
+function init(){
+  mkCards(); const sv=loadUI();
+  $('wk').value=DEFAULT_WORKER; $('code').value=(sv&&sv.code)||DEFAULT_CODE; if(sv){ $('sym').value=sv.sym||'QQQ'; $('t1H').value=sv.t1||''; $('t4H').value=sv.t4||''; $('wk').value=sv.wk||DEFAULT_WORKER; $('seed').value=sv.seed||'sma'; $('ltf').value=sv.ltf||'15m'; $('ltf4').value=sv.ltf4||'60m'; $('tz').value=sv.tz||'Europe/Rome'; ui.mode=sv.mode||'import'; }
+  const setMode=m=>{ ui.mode=m; $('mImp').hidden=m!=='import'; $('mWk').hidden=m!=='worker'; $('modeI').checked=m==='import'; $('modeW').checked=m==='worker'; };
+  setMode(ui.mode);
+  $('modeI').onchange=()=>{ setMode('import'); saveUI(); analyzeCode(); loadImport(); }; $('modeW').onchange=()=>{ setMode('worker'); saveUI(); analyzeCode(); ui.data={'1H':null,'4H':null}; feed(); };
+  $('code').oninput=()=>{ clearTimeout(ui.ct); ui.ct=setTimeout(()=>{ analyzeCode(); saveUI(); if(ui.mode==='import') loadImport(); else feed(); },350); };
+  $('sym').onchange=()=>{ ui.key={}; ui.notes=[]; if(ui.mode==='import'){ $('t1H').value=''; $('t4H').value=''; ui.data={'1H':null,'4H':null}; ui.dataRep={}; ui.fetchNote='Simbolo cambiato: i dati importati non portano il simbolo, quindi sono stati svuotati. Incolla la serie del nuovo simbolo.'; saveUI(); feed(); } else { saveUI(); loadWorker(); } };
+  $('ltf').onchange=$('ltf4').onchange=()=>{ saveUI(); ui.key={}; ui.data={'1H':null,'4H':null}; feed(); };
+  $('tz').onchange=()=>{ saveUI(); dash(); };
+  $('apply').onclick=loadImport; $('seed').onchange=()=>{ saveUI(); ui.key={}; eqBadge(); if(ui.mode==='import') loadImport(); else feed(); }; $('cmp').onclick=runEquiv; $('rc1H').onclick=()=>recalc('1H'); $('rc4H').onclick=()=>recalc('4H'); $('load').onclick=()=>{ saveUI(); loadWorker(); };
+  for(const tf of TFS) $('f'+tf).onchange=ev=>{ const fl=ev.target.files[0]; if(!fl) return; const r=new FileReader(); r.onload=()=>{ $('t'+tf).value=r.result; loadImport(); }; r.readAsText(fl); };
+  $('auto').onchange=()=>{ clearInterval(ui.iv); if($('auto').checked) ui.iv=setInterval(()=>{ if(!document.hidden&&ui.mode==='worker') loadWorker(); },60000); };
+  $('reset').onclick=()=>{ if(!confirm('Cancellare lo stato salvato di questo simbolo (entrambe le timeframe)?')) return; const sym=$('sym').value.trim().toUpperCase(); const del=[]; for(let i=0;i<LS.length;i++){ const k=LS.key(i); if(k&&k.indexOf('gc2|'+sym+'|')===0) del.push(k); } del.forEach(k=>LS.removeItem(k)); ui.key={}; ui.eng={}; ui.notes=[]; feed(); };
+  $('runtests').onclick=()=>{ const r=GC.Tests.run(), ko=r.filter(x=>!x.ok).length; $('tres').innerHTML=`<p><b>${r.length-ko} superati, ${ko} falliti</b> (dati sintetici)</p><ul class="tl">`+r.map(x=>`<li class="${x.ok?'g':'r'}">${x.ok?'✔':'✘'} ${esc(x.n)}${x.ok?'':' — '+esc(x.d)}</li>`).join('')+'</ul>'; };
+  analyzeCode(); if(ui.mode==='import') loadImport(); else { ui.data={'1H':null,'4H':null}; feed(); }
+  setInterval(()=>{ if(ui.a&&ui.a.ok) feed(); },30000);   /* ricalcolo qualità/età: barre già elaborate non generano nuove osservazioni */
+  requestAnimationFrame(loop);
+}
+window.addEventListener('DOMContentLoaded',init);
+})();
+</script></body></html>
